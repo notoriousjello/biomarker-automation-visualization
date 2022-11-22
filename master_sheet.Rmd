@@ -65,27 +65,47 @@ master <- merge(master, ngal, by = "Sample", all.y = TRUE)
 
 # orders the dataframe by Sample number
 master <- master[order(master$Sample),]
-
-master
 ```
 
 ```{r}
 # creates a new excel sheet of the master dataframe with the assay results
-#write_xlsx(master, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\assay_master_sheet.xlsx")
+write_xlsx(master, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\assay_master_sheet.xlsx")
 ```
 
 Here, I'm making Pavan's requested table with all of the variables he wanted, and then exporting it as an xlsx
 ```{r}
 # creating a new dataframe
-summary <- data.frame(urine_biomarker = c("NGAL, IL-18, sFas, Ang_2"), 
+summary <- data.frame(urine_biomarker = c('NGAL', 'IL-18', 'sFas', 'Ang_2'), 
                       N = c(202, 202, 202, 202), 
-                      number_LLOD = c(0, 0, 0, 175), 
+                      number_LLOD = c(0, 0, 0, 149), 
                       avg_interplate_cv = c(4.7, 2.9, 2.5, 18.7), 
                       avg_intraplate_CV = c(3.4, 2.8, 2.5, 19.2), 
                       avg_concentration_pg_per_ml = c(1390947, 1903.73, 7277, 1059.806), 
                       iqr = c(569731-58871, 945.45-214.65, 8720-2767, 11013.661-43.253)
                       )
-
-#write_xlsx(summary, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\biomarker_summary.xlsx")
+write_xlsx(summary, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\biomarker_summary_20221122.xlsx")
 ```
+
+Now I'm going to be merging the master dataframe from above with some clinical data that I was given
+```{r}
+# pulling a csv and storing it under incident
+incident <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
+
+# pulling a csv and storing it under prevalent
+prevalent <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
+
+# merges the prevalent and incident aki data
+aki_data <- merge(incident, prevalent, by = "Subject_ID")
+
+colnames(aki_data)[1] <- "StudyID" # renames the column
+```
+
+```{r}
+# merges the aki_data and master dataframes
+biomarker_assays_clinical_data <- merge(master, aki_data, by = "StudyID", all.x= TRUE)
+
+# writes the merged data to a new excel sheet
+write_xlsx(biomarker_assays_clinical_data, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+```
+
 
