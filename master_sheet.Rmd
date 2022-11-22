@@ -5,3 +5,47 @@ date: "2022-11-21"
 output: html_document
 ---
 
+```{r}
+library("readxl")
+library("tidyverse")
+```
+
+
+```{r}
+ang_2 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "WideData")
+
+colnames(ang_2)[2] <- "Ang-2 (pg/mL)"
+
+
+il18 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
+
+il18 <- il18[2:3]
+
+ngal <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
+
+ngal <- ngal[2:3]
+
+sfas <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
+
+sfas <-sfas[2:5]
+  
+# assigns to variables all the data sheets from ang_2, il-18, ngal, and sfas 
+# biomarker assays
+
+ang_2
+sfas
+ngal
+il18
+```
+
+```{r}
+master <- merge(il18, ngal, by = "Sample")
+#master <- merge(master, il18, by = "Sample", all.x = FALSE)
+#master <- merge(master, ang_2, by = "Sample", all.x = FALSE)
+#colnames(master)[7] <- "Ang-2 (pg/mL)"
+
+master
+```
+
+
+
