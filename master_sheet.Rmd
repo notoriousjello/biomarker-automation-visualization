@@ -13,30 +13,47 @@ library("tidyverse")
 library("writexl")
 ```
 
+These chunks of code clean up the data by removing standards and QC as well as any column renaming that needs to happen.
 
 ```{r}
+# assigns to variables all the data sheets from ang_2, il-18, ngal, and sfas biomarker assays
 ang_2 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "WideData")
-colnames(ang_2)[2] <- "Ang-2 (pg/mL)"
+# changes the column name
+colnames(ang_2)[2] <- "Urine_Ang-2_V1 (pg/mL)"
 
+# replaces NaN with NA
+ang_2$`Urine_Ang-2_V1 (pg/mL)`[is.nan(ang_2$`Urine_Ang-2_V1 (pg/mL)`)] <- NA
 
-il18 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
-il18 <- il18[-1]
-
-ngal <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
-ngal <- ngal[-1]
-
-sfas <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
-sfas <- sfas[-1]
-  
-# assigns to variables all the data sheets from ang_2, il-18, ngal, and sfas 
-# biomarker assays
-
-ang_2
-sfas
-ngal
-il18
+# converts the variable type into numeric
+ang_2$`Urine_Ang-2_V1 (pg/mL)` <- as.numeric(as.character(ang_2$`Urine_Ang-2_V1 (pg/mL)`))
 ```
 
+
+```{r}
+sfas <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
+sfas <- sfas[-1]
+colnames(sfas)[4] <- "Urine_sFas_V1 (pg/mL)"
+```
+
+
+```{r}
+il18 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
+il18 <- il18[-1]
+colnames(il18)[2] <- "Urine_IL-18_V1 (pg/mL)"
+
+# removes all rows from il18 that are not pure numeric (removing QC/Standard)
+il18 <- il18[!is.na(as.numeric(il18$Sample)), ]
+```
+
+```{r}
+ngal <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
+ngal <- ngal[-1]
+colnames(ngal)[2] <- "Urine_NGAL_V1 (pg/mL)"
+
+# removes all rows from ngal that are not pure numeric (removing QC/Standard)
+ngal <- ngal[!is.na(as.numeric(ngal$Sample)), ]
+```
+This code chunk merges the assay data for all four of the biomarkers and then orders them by sample id
 ```{r}
 # merges the sfas and ang_2 dataframes using sample as the common variable
 master <- merge(sfas, ang_2, by = "Sample")
@@ -46,17 +63,49 @@ master <- merge(sfas, ang_2, by = "Sample")
 master <- merge(master, il18, by = "Sample", all.y = TRUE)
 master <- merge(master, ngal, by = "Sample", all.y = TRUE)
 
-# removes all rows from Sample that are not pure numeric (removing QC/Standard)
-master <- master[!is.na(as.numeric(master$Sample)), ]
-# converts Sample into a numeric
-master$Sample <- as.numeric(as.character(master$Sample))
 # orders the dataframe by Sample number
 master <- master[order(master$Sample),]
-
 ```
 
 ```{r}
-# 
-write_xlsx(master, "B:\\Jordan Lo\\Biomarker Master Sheet\\assay_master_sheet.xlsx")
+# creates a new excel sheet of the master dataframe with the assay results
+write_xlsx(master, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\assay_master_sheet.xlsx")
 ```
+
+Here, I'm making Pavan's requested table with all of the variables he wanted, and then exporting it as an xlsx
+```{r}
+# creating a new dataframe
+summary <- data.frame(urine_biomarker = c('NGAL', 'IL-18', 'sFas', 'Ang_2'), 
+                      N = c(202, 202, 202, 202), 
+                      number_LLOD = c(0, 0, 0, 149), 
+                      avg_interplate_cv = c(4.7, 2.9, 2.5, 18.7), 
+                      avg_intraplate_CV = c(3.4, 2.8, 2.5, 19.2), 
+                      avg_concentration_pg_per_ml = c(1390947, 1903.73, 7277, 1059.806), 
+                      iqr = c(569731-58871, 945.45-214.65, 8720-2767, 11013.661-43.253)
+                      )
+write_xlsx(summary, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\biomarker_summary_20221122.xlsx")
+```
+
+Now I'm going to be merging the master dataframe from above with some clinical data that I was given
+```{r}
+# pulling a csv and storing it under incident
+incident <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
+
+# pulling a csv and storing it under prevalent
+prevalent <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
+
+# merges the prevalent and incident aki data
+aki_data <- merge(incident, prevalent, by = "Subject_ID")
+
+colnames(aki_data)[1] <- "StudyID" # renames the column
+```
+
+```{r}
+# merges the aki_data and master dataframes
+biomarker_assays_clinical_data <- merge(master, aki_data, by = "StudyID", all.x= TRUE)
+
+# writes the merged data to a new excel sheet
+write_xlsx(biomarker_assays_clinical_data, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+```
+
 
