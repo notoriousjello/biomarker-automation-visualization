@@ -4,30 +4,29 @@ author: "Jordan Lo"
 date: "2022-11-21"
 output: html_document
 ---
-
 ```{r}
+# Enables us to read excel files
 library("readxl")
+# Allows us to do data clean-up
 library("tidyverse")
+# Enables us to write to an excel file
+library("writexl")
 ```
 
 
 ```{r}
 ang_2 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "WideData")
-
 colnames(ang_2)[2] <- "Ang-2 (pg/mL)"
 
 
 il18 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
-
-il18 <- il18[2:3]
+il18 <- il18[-1]
 
 ngal <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
-
-ngal <- ngal[2:3]
+ngal <- ngal[-1]
 
 sfas <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
-
-sfas <-sfas[2:5]
+sfas <- sfas[-1]
   
 # assigns to variables all the data sheets from ang_2, il-18, ngal, and sfas 
 # biomarker assays
@@ -39,13 +38,25 @@ il18
 ```
 
 ```{r}
-master <- merge(il18, ngal, by = "Sample")
-#master <- merge(master, il18, by = "Sample", all.x = FALSE)
-#master <- merge(master, ang_2, by = "Sample", all.x = FALSE)
-#colnames(master)[7] <- "Ang-2 (pg/mL)"
+# merges the sfas and ang_2 dataframes using sample as the common variable
+master <- merge(sfas, ang_2, by = "Sample")
 
-master
+# merges dataframes by sample again but all.y ensures it's only a partial join
+# that makes it so it inputs NA as the variable into places where the join doesn't match
+master <- merge(master, il18, by = "Sample", all.y = TRUE)
+master <- merge(master, ngal, by = "Sample", all.y = TRUE)
+
+# removes all rows from Sample that are not pure numeric (removing QC/Standard)
+master <- master[!is.na(as.numeric(master$Sample)), ]
+# converts Sample into a numeric
+master$Sample <- as.numeric(as.character(master$Sample))
+# orders the dataframe by Sample number
+master <- master[order(master$Sample),]
+
 ```
 
-
+```{r}
+# 
+write_xlsx(master, "B:\\Jordan Lo\\Biomarker Master Sheet\\assay_master_sheet.xlsx")
+```
 
