@@ -1,0 +1,136 @@
+---
+title: "Biomarker Visualizations"
+author: "Jordan Lo"
+date: "2022-11-30"
+output: html_document
+---
+```{r}
+# Enables us to read excel files
+library("readxl")
+# Allows us to do data processing and clean-up
+library("tidyverse")
+# Enables us to write to an excel file
+library("writexl")
+# GGally alows us to use their pairs funtion
+library("GGally")
+# ggplot2 lets us make pretty graphs
+library("ggplot2")
+# ggpubr 
+library("ggpubr")
+```
+
+```{r, progress = FALSE}
+bio_clinical <- read_excel("C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+
+# creates new columns for the log transformations of the biomarker concentrations 
+bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
+bio_clinical$log_il18 <- log(bio_clinical$`urine_il18_V1 (pg/mL)`)
+bio_clinical$log_ngal <- log(bio_clinical$`urine_ngal_V1 (pg/mL)`)
+bio_clinical$log_sfas <- log(bio_clinical$`urine_sfas_V1 (pg/mL)`)
+
+# converts covid19 diagnosis to 0 for neg and 1 for pos
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'pos'] <- "1"
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'Pos'] <- "1"
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'neg'] <- "0"
+
+bio_clinical$COVID19<- as.numeric(as.character(bio_clinical$COVID19))
+
+# converts aki_hosp from numeric into a character for better visualization
+bio_clinical$aki_hosp <- as.character(bio_clinical$aki_hosp)
+
+
+# view(bio_clinical)
+```
+
+```{r}
+bio_clinical %>%
+  select(c(`log_ang2`, `log_il18`, `log_ngal`, `log_sfas`, )) %>%
+  ggpairs(labels = letters[1:ncol(bio_clinical)], 
+          lower = list(continuous=wrap("smooth"))) +
+  theme_bw() +
+  ggtitle("Correlation Data of Biomarker Concentrations") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+bio_clinical %>%
+  ggplot(aes(x = log_ang2,
+             y = dialysis_hosp)) +
+  geom_jitter(width = 0, # adds jitter to the points
+              height = 0.2) +
+  labs(x = "Log of Ang_2 Biomarker Concentrations in Urine",
+       y = "Incident Dialysis (0 = No, 1 = Yes)") +
+  scale_y_continuous(breaks = seq(0,1 , by = 1))
+
+```{r}
+bio_clinical_NA <- bio_clinical %in%
+  filter(aki_hosp != NA)
+
+# creates a jitter plot of the ang 2 levels and the presence of incident aki
+ang2_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_ang2, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2)
+  labs(x = "[Ang-2]",
+       y = "")
+
+ang2_jitter
+
+il18_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_il18, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2)
+  labs(x = "[IL-18]",
+       y = "")
+
+il18_jitter
+
+sfas_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_sfas, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2)
+  labs(x = "[sFas]",
+       y = "")
+
+sfas_jitter
+
+ngal_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_ngal, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = "")
+
+ngal_jitter
+```
+
+```{r}
+figure <- ggarrange(ang2_jitter, il18_jitter, ngal_jitter, sfas_jitter,
+                    ncol = 2, 
+                    nrow = 2)
+annotate_figure(figure,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI 
+in CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are log transformed and taken from the first visit 
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+```
+
+```{r}
+
+```
+
+
+```{r}
+ang2_box <- ggplot(data = bio_clinical, aes(x = log_ang2, y = aki_hosp)) 
+
+ang2_box +
+  geom_boxplot()
+```
+

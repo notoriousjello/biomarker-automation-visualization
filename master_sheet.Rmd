@@ -4,7 +4,6 @@ author: "Jordan Lo"
 date: "2022-11-21"
 output: html_document
 ---
-
 ```{r}
 # Enables us to read excel files
 library("readxl")
@@ -12,10 +11,6 @@ library("readxl")
 library("tidyverse")
 # Enables us to write to an excel file
 library("writexl")
-# GGally alows us to use their pairs funtion
-library("GGally")
-# ggplot2 lets us make pretty graphs
-library("ggplot2")
 ```
 
 These chunks of code clean up the data by removing standards and QC as well as any column renaming that needs to happen.
@@ -106,43 +101,5 @@ colnames(aki_data)[1] <- "StudyID"
 biomarker_assays_clinical_data <- merge(master, aki_data, by = "StudyID", all.x= TRUE)
 
 write_xlsx(biomarker_assays_clinical_data, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
-```
-
-```{r, progress = FALSE}
-bio_clinical <- read_excel("C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
-
-# creates new columns for the log transformations of the biomarker concentrations 
-bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
-bio_clinical$log_il18 <- log(bio_clinical$`urine_il18_V1 (pg/mL)`)
-bio_clinical$log_ngal <- log(bio_clinical$`urine_ngal_V1 (pg/mL)`)
-bio_clinical$log_sfas <- log(bio_clinical$`urine_sfas_V1 (pg/mL)`)
-
-# converts covid19 diagnosis to 0 for neg and 1 for pos
-bio_clinical['COVID19'][bio_clinical['COVID19'] == 'pos'] <- "1"
-bio_clinical['COVID19'][bio_clinical['COVID19'] == 'Pos'] <- "1"
-bio_clinical['COVID19'][bio_clinical['COVID19'] == 'neg'] <- "0"
-
-bio_clinical$COVID19<- as.numeric(as.character(bio_clinical$COVID19))
-
-
-view(bio_clinical)
-```
-
-```{r}
-bio_clinical %>%
-  select(c(`log_ang2`, `log_il18`, `log_ngal`, `log_sfas`, )) %>%
-  ggpairs(labels = letters[1:ncol(bio_clinical)], lower = list(continuous=wrap("smooth"))) +
-  theme_bw()
-```
-
-```{r}
-bio_clinical %>%
-  ggplot(aes(x = log_ang2,
-             y = dialysis_hosp)) +
-  geom_jitter(width = 0, # adds jitter to the points
-              height = 0.05) +
-  labs(x = "Log of Ang_2 Biomarker Concentrations in Urine",
-       y = "Incident Dialysis (0 = No, 1 = Yes)") +
-  scale_y_continuous(breaks = seq(0,1 , by = 1))
 ```
 
