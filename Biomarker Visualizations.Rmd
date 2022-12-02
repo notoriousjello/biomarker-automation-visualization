@@ -61,7 +61,7 @@ bio_clinical_NA <- bio_clinical %>%
   filter(aki_hosp != "NA")
 
 # creates a jitter plot of the ang 2 levels and the presence of incident aki
-ang2_jitter <-
+ang2_i_jitter <-
   ggplot(data = bio_clinical_NA,                          # selects dataframe
          mapping = (aes(x = log_ang2, y = aki_hosp))) +   # maps variables to x and y
   geom_jitter(width = 0,                                  # sets parameters for the jitter
@@ -69,7 +69,7 @@ ang2_jitter <-
   labs(x = "[Ang-2]",                                     # labels axes
        y = " ")
 
-il18_jitter <-
+il18_i_jitter <-
   ggplot(data = bio_clinical_NA, 
          mapping = (aes(x = log_il18, y = aki_hosp))) +
   geom_jitter(width = 0, 
@@ -77,7 +77,7 @@ il18_jitter <-
   labs(x = "[IL-18]",
        y = " ")
 
-sfas_jitter <-
+sfas_i_jitter <-
   ggplot(data = bio_clinical_NA, 
          mapping = (aes(x = log_sfas, y = aki_hosp))) +
   geom_jitter(width = 0, 
@@ -85,7 +85,7 @@ sfas_jitter <-
   labs(x = "[sFas]",
        y = " ")
 
-ngal_jitter <-
+ngal_i_jitter <-
   ggplot(data = bio_clinical_NA, 
          mapping = (aes(x = log_ngal, y = aki_hosp))) +
   geom_jitter(width = 0, 
@@ -93,8 +93,8 @@ ngal_jitter <-
   labs(x = "[NGAL]",
        y = " ")
 
-# creates a 2x2 matrix of the four plots
-figure <- ggarrange(ang2_jitter, il18_jitter, ngal_jitter, sfas_jitter,
+# creates a 2x2 matrix of the four jitter plots
+figure <- ggarrange(ang2_i_jitter, il18_i_jitter, ngal_i_jitter, sfas_i_jitter,
                     ncol = 2, 
                     nrow = 2)
 # annotates the figure with a title and description
@@ -107,31 +107,29 @@ in CHROME Participants",
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
-```
 
-
-```{r}
-ang2_box <- ggplot(data = bio_clinical_NA, aes(x = log_ang2, y = aki_hosp)) +
+# this code chunk does the same as the jitter plot but replaces them with box plots
+ang2_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_ang2, y = aki_hosp)) +
   geom_boxplot()+
   labs(x = "[Ang-2]",
        y = " ")
 
-il18_box <- ggplot(data = bio_clinical_NA, aes(x = log_il18, y = aki_hosp)) +
+il18_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_il18, y = aki_hosp)) +
   geom_boxplot()+
   labs(x = "[IL-18]",
        y = " ")
 
-sfas_box <- ggplot(data = bio_clinical_NA, aes(x = log_sfas, y = aki_hosp)) +
+sfas_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_sfas, y = aki_hosp)) +
   geom_boxplot() +
   labs(x = "[sFas]",
        y = " ")
 
-ngal_box <- ggplot(data = bio_clinical_NA, aes(x = log_ngal, y = aki_hosp)) +
+ngal_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_ngal, y = aki_hosp)) +
   geom_boxplot()+
   labs(x = "[NGAL]",
        y = " ")
 
-figure <- ggarrange(ang2_box, il18_box, ngal_box, sfas_box,
+figure <- ggarrange(ang2_i_box, il18_i_box, ngal_i_box, sfas_i_box,
                     ncol = 2, 
                     nrow = 2)
 annotate_figure(figure,
@@ -146,6 +144,7 @@ in CHROME Participants",
 ```
 
 ```{r}
+# this code chunk makes the jitter plot grid as above but with prevalent AKI
 ang2_p_jitter <-
   ggplot(data = bio_clinical_NA, 
          mapping = (aes(x = log_ang2, y = prevalent_aki))) +
@@ -190,9 +189,8 @@ in CHROME Participants",
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
-```
 
-```{r}
+# this code chunk below makes the box plots
 ang2_p_box <- ggplot(data = bio_clinical_NA, aes(x = log_ang2, y = prevalent_aki)) +
   geom_boxplot() +
   labs(x = "[Ang-2]",
@@ -225,5 +223,81 @@ in CHROME Participants",
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
+```
+
+```{r}
+# subsets the bio_clinical_NA data by positive covid diagnosis 
+bio_clinical_covpos <- bio_clinical_NA %>%
+  filter(COVID19 == "1")
+
+# regenerating the jitter plots but subsetted by positive covid diagnosis
+ang2_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+ngal_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+sfas_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+i_covpos_jit_grid <- ggarrange(ang2_i_covpos_jit, il18_i_covpos_jit, ngal_i_covpos_jit, sfas_i_covpos_jit,
+                               ncol = 2,
+                               nrow = 2)
+annotate_figure(i_covpos_jit_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI
+in COVID-19 Positive CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+0 = No AKI | 1 = AKI"))
+
+# regenerating boxplots but subsetted by positive covid diagnosis
+ang2_i_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_i_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[IL-18]",
+       y = " ")
+
+ngal_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+sfas_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+i_covpos_jit_grid <- ggarrange(ang2_i_covpos_jit, il18_i_covpos_jit, ngal_i_covpos_jit, sfas_i_covpos_jit,
+                               ncol = 2,
+                               nrow = 2)
+annotate_figure(i_covpos_jit_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI
+in COVID-19 Positive CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+0 = No AKI | 1 = AKI"))
 ```
 
