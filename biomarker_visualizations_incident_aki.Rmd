@@ -22,7 +22,7 @@ library("ggpubr")
 ```
 
 ```{r, progress = FALSE}
-bio_clinical <- read_excel("C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+bio_clinical <- read_excel("Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
 
 # creates new columns for the log transformations of the biomarker concentrations 
 bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
@@ -140,7 +140,7 @@ annotate_figure(figure,
 in CHROME Participants",
                                 size = 12,
                                 face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit 
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit 
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
@@ -185,7 +185,7 @@ annotate_figure(i_covpos_jit_grid,
 in COVID-19 Positive CHROME Participants",
                                 size = 12,
                                 face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
@@ -226,7 +226,7 @@ annotate_figure(i_covpos_box_grid,
 in COVID-19 Positive CHROME Participants",
                                 size = 12,
                                 face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
@@ -270,7 +270,7 @@ annotate_figure(i_covneg_jit_grid,
 in COVID-19 Negative CHROME Participants",
                                 size = 12,
                                 face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
@@ -311,7 +311,7 @@ i_covneg_box_grid <- annotate_figure(i_covneg_box_grid,
  in COVID-19 Negative CHROME Participants",
                                 size = 12,
                                 face = "bold"),
-                 bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+                 bottom = text_grob("Concentrations are LN transformed and taken from the first visit
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
@@ -331,7 +331,7 @@ cov_biomarker_grid <- annotate_figure(cov_biomarker_grid,
 in CHROME Participants",
                       size = 12,
                       face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
 0 = No AKI | 1 = AKI",
                       size = 10,
                       face = "bold"),
@@ -340,7 +340,7 @@ in CHROME Participants",
                       face = "bold",
                       size = 10))
 
-ggsave(file = "biomarker_covid_incident_aki.png",
+ggsave(file = "visualizations\\biomarker_covid_incident_aki.png",
        plot = cov_biomarker_grid,
        height = 7,
        width = 14,

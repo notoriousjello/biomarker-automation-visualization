@@ -1,0 +1,63 @@
+---
+title: "Batch Effects"
+author: "Jordan Lo"
+date: "2022-12-06"
+output: html_document
+---
+```{r}
+# Enables us to read excel files
+library("readxl")
+# Allows us to do data processing and clean-up
+library("tidyverse")
+# Enables us to write to an excel file
+library("writexl")
+# ggplot2 lets us make pretty graphs
+library("ggplot2")
+```
+
+```{r}
+# assigns the plate excel sheet to a variable
+biomarker <- read_excel("raw_data\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "RawData")
+
+# replaces NaN with NA
+biomarker$`Calc. Conc. Mean`[is.nan(biomarker$`Calc. Conc. Mean`)] <- NA
+
+# converts the variable type into numeric
+biomarker$`Calc. Conc. Mean` <- as.numeric(as.character(biomarker$`Calc. Conc. Mean`))
+
+# takes the natural log of the calc conc mean
+biomarker$log_calc_conc_mean <- log(biomarker$`Calc. Conc. Mean`)
+
+# changes plate names
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate1b_23L0EAV560"] <- "Plate 1"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate2_23L0EA9196"] <- "Plate 2"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate3_23L0EA3190"] <- "Plate 3"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate4_23L0EAC191"] <- "Plate 4"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate5_23L0EA2192"] <- "Plate 5"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate6_23L0EAG193"] <- "Plate 6"
+
+```
+
+```{r}
+# creates the ggplot variable for the box plot
+plate_groups <- ggplot(data = biomarker, 
+                       mapping = aes(x = `Plate Name`, 
+                                     y = log_calc_conc_mean)) +
+# makes the boxplot visualization
+  geom_boxplot() +
+# creates the axes labels as well as the title and subtitle
+  labs(x = "Plate Number",
+       y = "LN Calculated Concentration Mean",
+       title = "Batch Effects in MSD Biomarker Assays",
+       subtitle = "Plates ran on 2022-04-07 by Nick O'Connor, Sharon Sahi, and Julia Hallowell") +
+  theme(plot.subtitle = element_text(size = 8)) # reduces the size of the subtitle
+  
+# saves the plot as a PNG
+ggsave(file = "visualizations\\20220407_MSD_Batch_Effect.png",  # file output location
+       plot = plate_groups,                                     # plot to output
+       height = 7,                                             
+       width = 10)
+```
+
+
+

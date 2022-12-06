@@ -17,7 +17,8 @@ These chunks of code clean up the data by removing standards and QC as well as a
 
 ```{r}
 # assigns to variables all the data sheets from ang_2, il-18, ngal, and sfas biomarker assays
-ang_2 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "WideData")
+ang_2 <- read_excel("raw_data\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", 
+                    sheet = "WideData")
 # changes the column name
 colnames(ang_2)[2] <- "urine_ang-2_V1 (pg/mL)"
 
@@ -30,14 +31,14 @@ ang_2$`urine_ang-2_V1 (pg/mL)` <- as.numeric(as.character(ang_2$`urine_ang-2_V1 
 
 
 ```{r}
-sfas <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
+sfas <- read_excel("raw_data\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
 sfas <- sfas[-1]
 colnames(sfas)[4] <- "urine_sfas_V1 (pg/mL)"
 ```
 
 
 ```{r}
-il18 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
+il18 <- read_excel("raw_data\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
 il18 <- il18[-1]
 colnames(il18)[2] <- "urine_il18_V1 (pg/mL)"
 
@@ -46,7 +47,7 @@ il18 <- il18[!is.na(as.numeric(il18$Sample)), ]
 ```
 
 ```{r}
-ngal <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
+ngal <- read_excel("raw_data\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
 ngal <- ngal[-1]
 colnames(ngal)[2] <- "urine_ngal_V1 (pg/mL)"
 
@@ -68,7 +69,7 @@ master <- master[order(master$Sample),]
 
 ```{r}
 # creates a new excel sheet of the master dataframe with the assay results
-write_xlsx(master, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\assay_master_sheet.xlsx")
+write_xlsx(master, "assay_master_sheet.xlsx")
 ```
 
 Here, I'm making Pavan's requested table with all of the variables he wanted, and then exporting it as an xlsx
@@ -82,15 +83,15 @@ summary <- data.frame(urine_biomarker = c('NGAL', 'IL-18', 'sFas', 'Ang_2'),
                       avg_concentration_pg_per_ml = c(1390947, 1903.73, 7277, 1059.806), 
                       iqr = c(569731-58871, 945.45-214.65, 8720-2767, 11013.661-43.253)
                       )
-write_xlsx(summary, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\biomarker_summary_20221122.xlsx")
+write_xlsx(summary, "biomarker_summary_20221122.xlsx")
 ```
 
 Now I'm going to be merging the master dataframe from above with some clinical data that I was given
 ```{r}
 # pulling a csv and storing it under a variable
-incident <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
+incident <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\raw_data\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
 
-prevalent <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
+prevalent <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\raw_data\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
 
 aki_data <- merge(incident, prevalent, by = "Subject_ID")
 
@@ -100,6 +101,5 @@ colnames(aki_data)[1] <- "StudyID"
 ```{r}
 biomarker_assays_clinical_data <- merge(master, aki_data, by = "StudyID", all.x= TRUE)
 
-write_xlsx(biomarker_assays_clinical_data, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+write_xlsx(biomarker_assays_clinical_data, "Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
 ```
-
