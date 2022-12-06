@@ -306,7 +306,7 @@ sfas_i_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = ak
 i_covneg_box_grid <- ggarrange(ang2_i_covneg_box, il18_i_covneg_box, ngal_i_covneg_box, sfas_i_covneg_box,
                               ncol = 2,
                               nrow = 2)
-annotate_figure(i_covneg_box_grid,
+i_covneg_box_grid <- annotate_figure(i_covneg_box_grid,
                  top = text_grob("Biomarker Concentrations and Rates of Incident AKI
  in COVID-19 Negative CHROME Participants",
                                 size = 12,
@@ -315,6 +315,8 @@ annotate_figure(i_covneg_box_grid,
 0 = No AKI | 1 = AKI",
                                 size = 10,
                                 face = "bold"))
+
+
 ```
 
 ```{r}
@@ -324,7 +326,7 @@ cov_biomarker_grid <- ggarrange(ang2_i_covneg_box, il18_i_covneg_box, ngal_i_cov
                            ang2_i_covpos_box, il18_i_covpos_box, ngal_i_covpos_box, sfas_i_covpos_box,
                            ncol = 4,
                            nrow = 2)
-annotate_figure(cov_biomarker_grid,
+cov_biomarker_grid <- annotate_figure(cov_biomarker_grid,
                 top = text_grob("Biomarker Concentrations, Rates of Incident AKI, and COVID-19 Status
 in CHROME Participants",
                       size = 12,
@@ -333,289 +335,16 @@ in CHROME Participants",
 0 = No AKI | 1 = AKI",
                       size = 10,
                       face = "bold"),
-                left = text_grob("    COVID-19 Positive                COVID-19 Negative",
+                left = text_grob("      COVID-19 Positive                                             COVID-19 Negative",
                       rot = 90,
                       face = "bold",
-                      size = 10,
-                      vjust = 2))
-```
+                      size = 10))
 
-PREVALENT AKI Visualizations
-
-```{r}
-# this code chunk makes the jitter plot grid as above but with prevalent AKI
-ang2_p_jitter <-
-  ggplot(data = bio_clinical_NA, 
-         mapping = (aes(x = log_ang2, y = prevalent_aki))) +
-  geom_jitter(width = 0,
-              height = .2) +
-  labs(x = "[Ang-2]",
-       y = " ")
-
-il18_p_jitter <-
-  ggplot(data = bio_clinical_NA, 
-         mapping = (aes(x = log_il18, y = prevalent_aki))) +
-  geom_jitter(width = 0,
-              height = .2) +
-  labs(x = "[IL-18]",
-       y = " ")
-
-ngal_p_jitter <-
-  ggplot(data = bio_clinical_NA, 
-         mapping = (aes(x = log_ngal, y = prevalent_aki))) +
-  geom_jitter(width = 0,
-              height = .2) +
-  labs(x = "[NGAL]",
-       y = " ")
-
-sfas_p_jitter <-
-  ggplot(data = bio_clinical_NA, 
-         mapping = (aes(x = log_sfas, y = prevalent_aki))) +
-  geom_jitter(width = 0,
-              height = .2) +
-  labs(x = "[sFas]",
-       y = " ")
-
-figure <- ggarrange(ang2_p_jitter, il18_p_jitter, ngal_p_jitter, sfas_p_jitter,
-                    ncol = 2, 
-                    nrow = 2)
-annotate_figure(figure,
-                top = text_grob("Biomarker Concentrations and Rates of Prevalent AKI 
-in CHROME Participants",
-                                size = 12,
-                                face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit 
-0 = No AKI | 1 = AKI",
-                                size = 10,
-                                face = "bold"))
+ggsave(file = "biomarker_covid_incident_aki.png",
+       plot = cov_biomarker_grid,
+       height = 7,
+       width = 14,
+       dpi = 300)
 ```
 
 
-```{r}
-# boxplot grid creation for prevalent aki
-ang2_p_box <- ggplot(data = bio_clinical_NA, aes(x = log_ang2, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[Ang-2]",
-       y = " ")
-
-il18_p_box <- ggplot(data = bio_clinical_NA, aes(x = log_il18, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[IL-18]",
-       y = " ")
-
-ngal_p_box <- ggplot(data = bio_clinical_NA, aes(x = log_ngal, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[NGAL]",
-       y = " ")
-
-sfas_p_box <- ggplot(data = bio_clinical_NA, aes(x = log_sfas, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[sFas]",
-       y = " ")
-
-figure <- ggarrange(ang2_p_box, il18_p_box, ngal_p_box, sfas_p_box,
-                    ncol = 2, 
-                    nrow = 2)
-annotate_figure(figure,
-                top = text_grob("Biomarker Concentrations and Rates of Prevalent AKI 
-in CHROME Participants",
-                                size = 12,
-                                face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit 
-0 = No AKI | 1 = AKI",
-                                size = 10,
-                                face = "bold"))
-```
-
-```{r}
-# subsets the bio_clinical_NA data by positive covid diagnosis 
-bio_clinical_covpos <- bio_clinical_NA %>%
-  filter(COVID19 == "1")
-
-# regenerating the prevalent aki jitter plots but subsetted by positive covid diagnosis
-ang2_p_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[Ang-2]",
-       y = " ")
-
-il18_p_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[IL-18]",
-       y = " ")
-
-ngal_p_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[NGAL]",
-       y = " ")
-
-sfas_p_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[sFas]",
-       y = " ")
-
-p_covpos_jit_grid <- ggarrange(ang2_p_covpos_jit, il18_p_covpos_jit, ngal_p_covpos_jit, sfas_p_covpos_jit,
-                               ncol = 2,
-                               nrow = 2)
-annotate_figure(p_covpos_jit_grid,
-                top = text_grob("Biomarker Concentrations and Rates of Prevalent AKI
-in COVID-19 Positive CHROME Participants",
-                                size = 12,
-                                face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
-0 = No AKI | 1 = AKI",
-                                size = 10,
-                                face = "bold"))
-```
-
-
-```{r}
-# regenerating prevalent aki boxplots but subsetted by positive covid diagnosis
-ang2_p_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[Ang-2]",
-       y = " ") +
-  scale_x_continuous(limits = c(1,10))
-
-il18_p_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[IL-18]",
-       y = " ") +
-  scale_x_continuous(limits = c(3,12))
-
-ngal_p_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[NGAL]",
-       y = " ") +
-  scale_x_continuous(limits = c(7.5,17.5))
-
-sfas_p_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[sFas]",
-       y = " ") +
-  scale_x_continuous(limits = c(5,12))
-
-p_covpos_box_grid <- ggarrange(ang2_p_covpos_box, il18_p_covpos_box, ngal_p_covpos_box, sfas_p_covpos_box,
-                               ncol = 2,
-                               nrow = 2)
-annotate_figure(p_covpos_box_grid,
-                top = text_grob("Biomarker Concentrations and Rates of Prevalent AKI
-in COVID-19 Positive CHROME Participants",
-                                size = 12,
-                                face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
-0 = No AKI | 1 = AKI",
-                                size = 10,
-                                face = "bold"))
-```
-
-```{r}
-# subsets the bio_clinical_NA data by negative covid diagnosis 
-bio_clinical_covneg <- bio_clinical_NA %>%
-  filter(COVID19 == "0")
-
-# regenerating the prevalent aki jitter plots but subsetted by negative covid diagnosis
-ang2_p_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_ang2, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[Ang-2]",
-       y = " ")
-
-il18_p_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_il18, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[IL-18]",
-       y = " ")
-
-ngal_p_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_ngal, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[NGAL]",
-       y = " ")
-
-sfas_p_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = prevalent_aki)) +
-  geom_jitter(width = 0,
-              height = 0.2) +
-  labs(x = "[sFas]",
-       y = " ")
-
-p_covneg_jit_grid <- ggarrange(ang2_p_covneg_jit, il18_p_covneg_jit, ngal_p_covneg_jit, sfas_p_covneg_jit,
-                               ncol = 2,
-                               nrow = 2)
-annotate_figure(p_covneg_jit_grid,
-                top = text_grob("Biomarker Concentrations and Rates of Prevalent AKI
-in COVID-19 Negative CHROME Participants",
-                                size = 12,
-                                face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
-0 = No AKI | 1 = AKI",
-                                size = 10,
-                                face = "bold"))
-```
-
-
-```{r}
-# regenerating prevalent aki boxplots but subsetted by negative covid diagnosis
-ang2_p_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_ang2, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[Ang-2]",
-       y = " ") +
-  scale_x_continuous(limits = c(1,10))
-
-il18_p_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_il18, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[IL-18]",
-       y = " ") +
-  scale_x_continuous(limits = c(3,12))
-
-ngal_p_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_ngal, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[NGAL]",
-       y = " ") +
-  scale_x_continuous(limits = c(7.5,17.5))
-
-sfas_p_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = prevalent_aki)) +
-  geom_boxplot() +
-  labs(x = "[sFas]",
-       y = " ") +
-  scale_x_continuous(limits = c(5,12))
-
-p_covneg_box_grid <- ggarrange(ang2_p_covneg_box, il18_p_covneg_box, ngal_p_covneg_box, sfas_p_covneg_box,
-                              ncol = 2,
-                              nrow = 2)
-annotate_figure(p_covneg_box_grid,
-                 top = text_grob("Biomarker Concentrations and Rates of Prevalent AKI
- in COVID-19 Negative CHROME Participants",
-                                size = 12,
-                                face = "bold"),
-                 bottom = text_grob("Concentrations are logn transformed and taken from the first visit
-0 = No AKI | 1 = AKI",
-                                size = 10,
-                                face = "bold"))
-```
-
-```{r}
-# creates a comparison plot grid displaying biomarker concentrations and covid diagnosis
-
-cov_biomarker_grid <- ggarrange(ang2_p_covneg_box, il18_p_covneg_box, ngal_p_covneg_box, sfas_p_covneg_box,
-                           ang2_p_covpos_box, il18_p_covpos_box, ngal_p_covpos_box, sfas_p_covpos_box,
-                           ncol = 4,
-                           nrow = 2)
-annotate_figure(cov_biomarker_grid,
-                top = text_grob("Biomarker Concentrations, Rates of Prevalent AKI, and COVID-19 Status
-in CHROME Participants",
-                      size = 12,
-                      face = "bold"),
-                bottom = text_grob("Concentrations are logn transformed and taken from the first visit
-0 = No AKI | 1 = AKI",
-                      size = 10,
-                      face = "bold"),
-                left = text_grob("    COVID-19 Positive                COVID-19 Negative",
-                      rot = 90,
-                      face = "bold",
-                      size = 10,
-                      vjust = 2))
-```

@@ -88,7 +88,7 @@ figure <- ggarrange(ang2_d_jitter, il18_d_jitter, ngal_d_jitter, sfas_d_jitter,
                     ncol = 2, 
                     nrow = 2)
 # annotates the figure with a title and description
-annotate_figure(figure,
+figure <- annotate_figure(figure,
                 top = text_grob("Biomarker Concentrations and Rates of Dialysis 
 in CHROME Participants",
                                 size = 12,
@@ -97,6 +97,11 @@ in CHROME Participants",
 0 = No Dialysis | 1 = Dialysis",
                                 size = 10,
                                 face = "bold"))
+
+ggsave(file = "biomarker_dialysis_scatter.png",
+       plot = figure,
+       height = 7, 
+       width = 14)
 ```
 
 
@@ -125,7 +130,7 @@ ngal_d_box <- ggplot(data = bio_clinical_NA, aes(x = log_ngal, y = dialysis_hosp
 figure <- ggarrange(ang2_d_box, il18_d_box, ngal_d_box, sfas_d_box,
                     ncol = 2, 
                     nrow = 2)
-annotate_figure(figure,
+figure <- annotate_figure(figure,
                 top = text_grob("Biomarker Concentrations and Rates of Dialysis 
 in CHROME Participants",
                                 size = 12,
@@ -134,6 +139,11 @@ in CHROME Participants",
 0 = No Dialysis | 1 = Dialysis",
                                 size = 10,
                                 face = "bold"))
+
+ggsave(file = "biomarker_dialysis_box.png",
+       plot = figure,
+       height = 7,
+       width = 14)
 ```
 
 

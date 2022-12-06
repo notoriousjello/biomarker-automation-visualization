@@ -321,7 +321,7 @@ cov_biomarker_grid <- ggarrange(ang2_p_covneg_box, il18_p_covneg_box, ngal_p_cov
                            ang2_p_covpos_box, il18_p_covpos_box, ngal_p_covpos_box, sfas_p_covpos_box,
                            ncol = 4,
                            nrow = 2)
-annotate_figure(cov_biomarker_grid,
+cov_biomarker_grid <- annotate_figure(cov_biomarker_grid,
                 top = text_grob("Biomarker Concentrations, Rates of Prevalent AKI, and COVID-19 Status
 in CHROME Participants",
                       size = 12,
@@ -330,9 +330,16 @@ in CHROME Participants",
 0 = No AKI | 1 = AKI",
                       size = 10,
                       face = "bold"),
-                left = text_grob("    COVID-19 Positive                COVID-19 Negative",
+                left = text_grob("      COVID-19 Positive                                             COVID-19 Negative",
                       rot = 90,
                       face = "bold",
-                      size = 10,
-                      vjust = 2))
+                      size = 10))
+
+ggsave(file = "biomarker_covid_prevalent_aki.png",
+       plot = cov_biomarker_grid,
+       height = 7,
+       width = 14,
+       dpi = 300)
 ```
+
+
