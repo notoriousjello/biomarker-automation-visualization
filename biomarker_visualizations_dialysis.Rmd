@@ -14,7 +14,7 @@ library("ggpubr")
 ```
 
 ```{r, progress = FALSE}
-bio_clinical <- read_excel("Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+bio_clinical <- read_excel("data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
 
 # creates new columns for the log transformations of the biomarker concentrations 
 bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)

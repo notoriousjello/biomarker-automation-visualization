@@ -17,7 +17,8 @@ library("ggplot2")
 
 ```{r}
 # assigns the plate excel sheet to a variable
-biomarker <- read_excel("raw_data\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "RawData")
+biomarker <- read_excel("raw_data\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", 
+                        sheet = "RawData")
 
 # replaces NaN with NA
 biomarker$`Calc. Conc. Mean`[is.nan(biomarker$`Calc. Conc. Mean`)] <- NA

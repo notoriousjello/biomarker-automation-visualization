@@ -69,7 +69,7 @@ master <- master[order(master$Sample),]
 
 ```{r}
 # creates a new excel sheet of the master dataframe with the assay results
-write_xlsx(master, "assay_master_sheet.xlsx")
+write_xlsx(master, "data_merges\\assay_master_sheet.xlsx")
 ```
 
 Here, I'm making Pavan's requested table with all of the variables he wanted, and then exporting it as an xlsx
@@ -83,15 +83,15 @@ summary <- data.frame(urine_biomarker = c('NGAL', 'IL-18', 'sFas', 'Ang_2'),
                       avg_concentration_pg_per_ml = c(1390947, 1903.73, 7277, 1059.806), 
                       iqr = c(569731-58871, 945.45-214.65, 8720-2767, 11013.661-43.253)
                       )
-write_xlsx(summary, "biomarker_summary_20221122.xlsx")
+write_xlsx(summary, "data_merges\\biomarker_summary_20221122.xlsx")
 ```
 
 Now I'm going to be merging the master dataframe from above with some clinical data that I was given
 ```{r}
 # pulling a csv and storing it under a variable
-incident <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\raw_data\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
+incident <- read_csv("raw_data\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
 
-prevalent <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\raw_data\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
+prevalent <- read_csv("raw_data\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
 
 aki_data <- merge(incident, prevalent, by = "Subject_ID")
 
@@ -101,5 +101,29 @@ colnames(aki_data)[1] <- "StudyID"
 ```{r}
 biomarker_assays_clinical_data <- merge(master, aki_data, by = "StudyID", all.x= TRUE)
 
-write_xlsx(biomarker_assays_clinical_data, "Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+write_xlsx(biomarker_assays_clinical_data, "data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
 ```
+```{r}
+bio_clinical <- read_excel("data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+
+# creates new columns for the log transformations of the biomarker concentrations 
+bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
+bio_clinical$log_il18 <- log(bio_clinical$`urine_il18_V1 (pg/mL)`)
+bio_clinical$log_ngal <- log(bio_clinical$`urine_ngal_V1 (pg/mL)`)
+bio_clinical$log_sfas <- log(bio_clinical$`urine_sfas_V1 (pg/mL)`)
+
+# creates a pairs plot of the biomarker concentration data using ggpairs
+bio_clinical %>%
+  select(c(`log_ang2`, `log_il18`, `log_ngal`, `log_sfas`, )) %>%  # selects the data used
+  ggpairs(labels = letters[1:ncol(bio_clinical)],                  # creates the actual plot
+          lower = list(continuous=wrap("smooth"))) +               
+  theme_bw() +                                                     # color scheme of plot
+  ggtitle("Correlation Data of Biomarker Concentrations") +        # creates a title
+  theme(plot.title = element_text(hjust = 0.5))                    # centers title
+
+ggsave(file = "visualizations\\biomarker_pairs.png",
+       height = 10,
+       width = 14)
+```
+
+

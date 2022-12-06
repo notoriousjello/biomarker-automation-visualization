@@ -22,7 +22,7 @@ library("ggpubr")
 ```
 
 ```{r, progress = FALSE}
-bio_clinical <- read_excel("Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+bio_clinical <- read_excel("data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
 
 # creates new columns for the log transformations of the biomarker concentrations 
 bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
@@ -40,20 +40,6 @@ bio_clinical$COVID19<- as.numeric(as.character(bio_clinical$COVID19))
 # converts aki_hosp from numeric into a character for better visualization
 bio_clinical$aki_hosp <- as.character(bio_clinical$aki_hosp)
 bio_clinical$prevalent_aki <- as.character(bio_clinical$prevalent_aki)
-
-class(bio_clinical$prevalent_aki)
-# view(bio_clinical)
-```
-
-```{r}
-# creates a pairs plot of the biomarker concentration data using ggpairs
-bio_clinical %>%
-  select(c(`log_ang2`, `log_il18`, `log_ngal`, `log_sfas`, )) %>%  # selects the data used
-  ggpairs(labels = letters[1:ncol(bio_clinical)],                  # creates the actual plot
-          lower = list(continuous=wrap("smooth"))) +               
-  theme_bw() +                                                     # color scheme of plot
-  ggtitle("Correlation Data of Biomarker Concentrations") +        # creates a title
-  theme(plot.title = element_text(hjust = 0.5))                    # centers titel
 ```
 
 ```{r}
