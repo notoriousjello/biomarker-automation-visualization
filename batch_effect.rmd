@@ -1,0 +1,65 @@
+---
+title: "Batch Effects"
+author: "Jordan Lo"
+date: "2022-12-06"
+output: html_document
+---
+```{r}
+# Enables us to read excel files
+library("readxl")
+# Allows us to do data processing and clean-up
+library("tidyverse")
+# Enables us to write to an excel file
+library("writexl")
+# ggplot2 lets us make pretty graphs
+library("ggplot2")
+```
+
+```{r}
+# assigns the plate excel sheet to a variable
+biomarker <- read_excel("raw_data\\.xlsx", 
+                        sheet = "RawData")
+
+
+# replaces NaN with NA
+biomarker$`Calc. Conc. Mean`[is.nan(biomarker$`Calc. Conc. Mean`)] <- NA
+
+# converts the variable type into numeric
+biomarker$`Calc. Conc. Mean` <- as.numeric(as.character(biomarker$`Calc. Conc. Mean`))
+
+# takes the natural log of the calc conc mean
+biomarker$log_calc_conc_mean <- log(biomarker$`Calc. Conc. Mean`)
+
+# changes plate names
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 1"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 2"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 3"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 4"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 5"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 6"
+
+```
+
+```{r}
+# creates the ggplot variable for the box plot
+plate_groups <- ggplot(data = biomarker, 
+                       mapping = aes(x = `Plate Name`, 
+                                     y = log_calc_conc_mean)) +
+# makes the boxplot visualization
+  geom_boxplot() +
+# creates the axes labels as well as the title and subtitle
+  labs(x = "Plate Number",
+       y = "LN Calculated Concentration Mean",
+       title = "",
+       subtitle = "") +
+  theme(plot.subtitle = element_text(size = 8)) # reduces the size of the subtitle
+  
+# saves the plot as a PNG
+ggsave(file = "visualizations\\.png",  # file output location
+       plot = plate_groups,                                           # plot to output
+       height = 7,                                             
+       width = 10)
+```
+
+
+

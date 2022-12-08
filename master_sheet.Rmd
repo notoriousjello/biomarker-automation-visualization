@@ -7,7 +7,7 @@ output: html_document
 ```{r}
 # Enables us to read excel files
 library("readxl")
-# Allows us to do data clean-up
+# Allows us to do data processing and clean-up
 library("tidyverse")
 # Enables us to write to an excel file
 library("writexl")
@@ -17,49 +17,49 @@ These chunks of code clean up the data by removing standards and QC as well as a
 
 ```{r}
 # assigns to variables all the data sheets from ang_2, il-18, ngal, and sfas biomarker assays
-ang_2 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", sheet = "WideData")
+ang_2 <- read_excel("raw_data\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", 
+                    sheet = "WideData")
 # changes the column name
-colnames(ang_2)[2] <- "Urine_Ang-2_V1 (pg/mL)"
+colnames(ang_2)[2] <- "urine_ang-2_V1 (pg/mL)"
 
 # replaces NaN with NA
-ang_2$`Urine_Ang-2_V1 (pg/mL)`[is.nan(ang_2$`Urine_Ang-2_V1 (pg/mL)`)] <- NA
+ang_2$`urine_ang-2_V1 (pg/mL)`[is.nan(ang_2$`urine_ang-2_V1 (pg/mL)`)] <- NA
 
 # converts the variable type into numeric
-ang_2$`Urine_Ang-2_V1 (pg/mL)` <- as.numeric(as.character(ang_2$`Urine_Ang-2_V1 (pg/mL)`))
+ang_2$`urine_ang-2_V1 (pg/mL)` <- as.numeric(as.character(ang_2$`urine_ang-2_V1 (pg/mL)`))
 ```
 
 
 ```{r}
-sfas <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
+sfas <- read_excel("raw_data\\CHR_US_V1_sFAS_MSD_Plates1-6_Data_NO_SKS_4-6-2022.xlsx", sheet = "WideSampleData")
 sfas <- sfas[-1]
-colnames(sfas)[4] <- "Urine_sFas_V1 (pg/mL)"
+colnames(sfas)[4] <- "urine_sfas_V1 (pg/mL)"
 ```
 
 
 ```{r}
-il18 <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
+il18 <- read_excel("raw_data\\CHR_US_V1_IL-18_MSD_Plates1-6_Data_NO__SKS_3-15-2022.xlsx", sheet = "WideData")
 il18 <- il18[-1]
-colnames(il18)[2] <- "Urine_IL-18_V1 (pg/mL)"
+colnames(il18)[2] <- "urine_il18_V1 (pg/mL)"
 
 # removes all rows from il18 that are not pure numeric (removing QC/Standard)
 il18 <- il18[!is.na(as.numeric(il18$Sample)), ]
 ```
 
 ```{r}
-ngal <- read_excel("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
+ngal <- read_excel("raw_data\\CHR_US_V1_NGAL_MSD_Plates1-6_Data_NO__SKS_3-16-2022.xlsx", sheet = "WideData")
 ngal <- ngal[-1]
-colnames(ngal)[2] <- "Urine_NGAL_V1 (pg/mL)"
+colnames(ngal)[2] <- "urine_ngal_V1 (pg/mL)"
 
-# removes all rows from ngal that are not pure numeric (removing QC/Standard)
 ngal <- ngal[!is.na(as.numeric(ngal$Sample)), ]
 ```
+
 This code chunk merges the assay data for all four of the biomarkers and then orders them by sample id
 ```{r}
-# merges the sfas and ang_2 dataframes using sample as the common variable
+# does a left join of the sfas and ang_2 dataframes by "Sample"
 master <- merge(sfas, ang_2, by = "Sample")
 
-# merges dataframes by sample again but all.y ensures it's only a partial join
-# that makes it so it inputs NA as the variable into places where the join doesn't match
+# does a partial join of the datasets
 master <- merge(master, il18, by = "Sample", all.y = TRUE)
 master <- merge(master, ngal, by = "Sample", all.y = TRUE)
 
@@ -69,7 +69,7 @@ master <- master[order(master$Sample),]
 
 ```{r}
 # creates a new excel sheet of the master dataframe with the assay results
-write_xlsx(master, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\assay_master_sheet.xlsx")
+write_xlsx(master, "data_merges\\assay_master_sheet.xlsx")
 ```
 
 Here, I'm making Pavan's requested table with all of the variables he wanted, and then exporting it as an xlsx
@@ -83,29 +83,47 @@ summary <- data.frame(urine_biomarker = c('NGAL', 'IL-18', 'sFas', 'Ang_2'),
                       avg_concentration_pg_per_ml = c(1390947, 1903.73, 7277, 1059.806), 
                       iqr = c(569731-58871, 945.45-214.65, 8720-2767, 11013.661-43.253)
                       )
-write_xlsx(summary, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\biomarker_summary_20221122.xlsx")
+write_xlsx(summary, "data_merges\\biomarker_summary_20221122.xlsx")
 ```
 
 Now I'm going to be merging the master dataframe from above with some clinical data that I was given
 ```{r}
-# pulling a csv and storing it under incident
-incident <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
+# pulling a csv and storing it under a variable
+incident <- read_csv("raw_data\\chrome_incident_aki_data_for_neha_10_26_2022.csv")
 
-# pulling a csv and storing it under prevalent
-prevalent <- read_csv("C:\\Users\\notjello\\Documents\\GitHub\\Biomarker-Master-Sheet\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
+prevalent <- read_csv("raw_data\\chrome_prevalent_aki_for_neha_10_26_2022.csv")
 
-# merges the prevalent and incident aki data
 aki_data <- merge(incident, prevalent, by = "Subject_ID")
 
-colnames(aki_data)[1] <- "StudyID" # renames the column
+colnames(aki_data)[1] <- "StudyID"
 ```
 
 ```{r}
-# merges the aki_data and master dataframes
 biomarker_assays_clinical_data <- merge(master, aki_data, by = "StudyID", all.x= TRUE)
 
-# writes the merged data to a new excel sheet
-write_xlsx(biomarker_assays_clinical_data, "C:\\Users\\notjello\\Documents\\Github\\Biomarker-Master-Sheet\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+write_xlsx(biomarker_assays_clinical_data, "data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+```
+```{r}
+bio_clinical <- read_excel("data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+
+# creates new columns for the log transformations of the biomarker concentrations 
+bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
+bio_clinical$log_il18 <- log(bio_clinical$`urine_il18_V1 (pg/mL)`)
+bio_clinical$log_ngal <- log(bio_clinical$`urine_ngal_V1 (pg/mL)`)
+bio_clinical$log_sfas <- log(bio_clinical$`urine_sfas_V1 (pg/mL)`)
+
+# creates a pairs plot of the biomarker concentration data using ggpairs
+bio_clinical %>%
+  select(c(`log_ang2`, `log_il18`, `log_ngal`, `log_sfas`, )) %>%  # selects the data used
+  ggpairs(labels = letters[1:ncol(bio_clinical)],                  # creates the actual plot
+          lower = list(continuous=wrap("smooth"))) +               
+  theme_bw() +                                                     # color scheme of plot
+  ggtitle("Correlation Data of Biomarker Concentrations") +        # creates a title
+  theme(plot.title = element_text(hjust = 0.5))                    # centers title
+
+ggsave(file = "visualizations\\biomarker_pairs.png",
+       height = 10,
+       width = 14)
 ```
 
 

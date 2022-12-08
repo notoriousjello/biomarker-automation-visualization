@@ -1,0 +1,331 @@
+```{r}
+# Enables us to read excel files
+library("readxl")
+# Allows us to do data processing and clean-up
+library("tidyverse")
+# Enables us to write to an excel file
+library("writexl")
+# GGally alows us to use their pairs funtion
+library("GGally")
+# ggplot2 lets us make pretty graphs
+library("ggplot2")
+# ggpubr 
+library("ggpubr")
+```
+
+```{r, progress = FALSE}
+bio_clinical <- read_excel("data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+
+# creates new columns for the log transformations of the biomarker concentrations 
+bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
+bio_clinical$log_il18 <- log(bio_clinical$`urine_il18_V1 (pg/mL)`)
+bio_clinical$log_ngal <- log(bio_clinical$`urine_ngal_V1 (pg/mL)`)
+bio_clinical$log_sfas <- log(bio_clinical$`urine_sfas_V1 (pg/mL)`)
+
+# converts covid19 diagnosis to 0 for neg and 1 for pos
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'pos'] <- "1"
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'Pos'] <- "1"
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'neg'] <- "0"
+
+bio_clinical$COVID19<- as.numeric(as.character(bio_clinical$COVID19))
+
+# converts dialysis from numeric into a character for better visualization
+bio_clinical$dialysis_hosp <- as.character(bio_clinical$dialysis_hosp)
+
+```
+
+
+```{r}
+# filters out patients with no clinical data
+bio_clinical_NA <- bio_clinical %>%
+  filter(dialysis_hosp != "NA")
+
+# creates a jitter plot of the ang 2 levels and use of dialysis
+ang2_d_jitter <-
+  ggplot(data = bio_clinical_NA,                          # selects dataframe
+         mapping = (aes(x = log_ang2, y = dialysis_hosp))) +   # maps variables to x and y
+  geom_jitter(width = 0,                                  # sets parameters for the jitter
+              height = 0.2) +
+  labs(x = "[Ang-2]",                                     # labels axes
+       y = " ")
+
+il18_d_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_il18, y = dialysis_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+sfas_d_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_sfas, y = dialysis_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+ngal_d_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_ngal, y = dialysis_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+# creates a 2x2 matrix of the four jitter plots
+figure <- ggarrange(ang2_d_jitter, il18_d_jitter, ngal_d_jitter, sfas_d_jitter,
+                    ncol = 2, 
+                    nrow = 2)
+# annotates the figure with a title and description
+figure <- annotate_figure(figure,
+                top = text_grob("Biomarker Concentrations and Rates of Dialysis 
+in CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit 
+0 = No Dialysis | 1 = Dialysis",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\biomarker_dialysis_scatter.png",
+       plot = figure,
+       height = 7, 
+       width = 14)
+```
+
+
+```{r}
+# boxplot creation with Dialysis data
+ang2_d_box <- ggplot(data = bio_clinical_NA, aes(x = log_ang2, y = dialysis_hosp)) +
+  geom_boxplot()+
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_d_box <- ggplot(data = bio_clinical_NA, aes(x = log_il18, y = dialysis_hosp)) +
+  geom_boxplot()+
+  labs(x = "[IL-18]",
+       y = " ")
+
+sfas_d_box <- ggplot(data = bio_clinical_NA, aes(x = log_sfas, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[sFas]",
+       y = " ")
+
+ngal_d_box <- ggplot(data = bio_clinical_NA, aes(x = log_ngal, y = dialysis_hosp)) +
+  geom_boxplot()+
+  labs(x = "[NGAL]",
+       y = " ")
+
+figure <- ggarrange(ang2_d_box, il18_d_box, ngal_d_box, sfas_d_box,
+                    ncol = 2, 
+                    nrow = 2)
+figure <- annotate_figure(figure,
+                top = text_grob("Biomarker Concentrations and Rates of Dialysis 
+in CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit 
+0 = No Dialysis | 1 = Dialysis",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\biomarker_dialysis_box.png",
+       plot = figure,
+       height = 7,
+       width = 14)
+```
+
+
+```{r}
+# subsets the bio_clinical_NA data by positive covid diagnosis 
+bio_clinical_covpos <- bio_clinical_NA %>%
+  filter(COVID19 == "1")
+
+# regenerating the dialysis jitter plots but subsetted by positive covid diagnosis
+ang2_d_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_d_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+ngal_d_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+sfas_d_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+d_covpos_jit_grid <- ggarrange(ang2_d_covpos_jit, il18_d_covpos_jit, ngal_d_covpos_jit, sfas_d_covpos_jit,
+                               ncol = 2,
+                               nrow = 2)
+annotate_figure(d_covpos_jit_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Dialysis
+in COVID-19 Positive CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No Dialysis | 1 = Dialysis",
+                                size = 10,
+                                face = "bold"))
+```
+
+
+```{r}
+# regenerating dialysis boxplots but subsetted by positive covid diagnosis
+ang2_d_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[Ang-2]",
+       y = " ") +
+  scale_x_continuous(limits = c(1,10))
+
+il18_d_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[IL-18]",
+       y = " ") +
+  scale_x_continuous(limits = c(3,12))
+
+ngal_d_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[NGAL]",
+       y = " ") +
+  scale_x_continuous(limits = c(7.5,17.5))
+
+sfas_d_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[sFas]",
+       y = " ") +
+  scale_x_continuous(limits = c(5,12))
+
+d_covpos_box_grid <- ggarrange(ang2_d_covpos_box, il18_d_covpos_box, ngal_d_covpos_box, sfas_d_covpos_box,
+                               ncol = 2,
+                               nrow = 2)
+annotate_figure(d_covpos_box_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Dialysis
+in COVID-19 Positive CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No Dialysis | 1 = Dialysis",
+                                size = 10,
+                                face = "bold"))
+```
+
+```{r}
+# subsets the bio_clinical_NA data by negative covid diagnosis 
+bio_clinical_covneg <- bio_clinical_NA %>%
+  filter(COVID19 == "0")
+
+# regenerating the Dialysis jitter plots but subsetted by negative covid diagnosis
+ang2_d_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_ang2, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_d_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_il18, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+ngal_d_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_ngal, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+sfas_d_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = dialysis_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+d_covneg_jit_grid <- ggarrange(ang2_d_covneg_jit, il18_d_covneg_jit, ngal_d_covneg_jit, sfas_d_covneg_jit,
+                               ncol = 2,
+                               nrow = 2)
+annotate_figure(d_covneg_jit_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Dialysis
+in COVID-19 Negative CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No Dialysis | 1 = Dialysis",
+                                size = 10,
+                                face = "bold"))
+```
+
+
+```{r}
+# regenerating dialysis boxplots but subsetted by negative covid diagnosis
+ang2_d_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_ang2, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[Ang-2]",
+       y = " ") +
+  scale_x_continuous(limits = c(1,10))
+
+il18_d_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_il18, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[IL-18]",
+       y = " ") +
+  scale_x_continuous(limits = c(3,12))
+
+ngal_d_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_ngal, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[NGAL]",
+       y = " ") +
+  scale_x_continuous(limits = c(7.5,17.5))
+
+sfas_d_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = dialysis_hosp)) +
+  geom_boxplot() +
+  labs(x = "[sFas]",
+       y = " ") +
+  scale_x_continuous(limits = c(5,12))
+
+d_covneg_box_grid <- ggarrange(ang2_d_covneg_box, il18_d_covneg_box, ngal_d_covneg_box, sfas_d_covneg_box,
+                              ncol = 2,
+                              nrow = 2)
+annotate_figure(d_covneg_box_grid,
+                 top = text_grob("Biomarker Concentrations and Rates of Dialysis
+ in COVID-19 Negative CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                 bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No Dialysis | 1 = Dialysis",
+                                size = 10,
+                                face = "bold"))
+```
+
+```{r}
+# creates a comparison plot grid displaying biomarker concentrations and covid diagnosis
+
+cov_biomarker_grid <- ggarrange(ang2_d_covneg_box, il18_d_covneg_box, ngal_d_covneg_box, sfas_d_covneg_box,
+                           ang2_d_covpos_box, il18_d_covpos_box, ngal_d_covpos_box, sfas_d_covpos_box,
+                           ncol = 4,
+                           nrow = 2)
+annotate_figure(cov_biomarker_grid,
+                top = text_grob("Biomarker Concentrations, Rates of Dialysis, and COVID-19 Status
+in CHROME Participants",
+                      size = 12,
+                      face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No Dialysis | 1 = Dialysis",
+                      size = 10,
+                      face = "bold"),
+                left = text_grob("    COVID-19 Positive                COVID-19 Negative",
+                      rot = 90,
+                      face = "bold",
+                      size = 10,
+                      vjust = 2))
+```

@@ -1,0 +1,405 @@
+---
+title: "Biomarker Visualizations"
+author: "Jordan Lo"
+date: "2022-11-30"
+output:
+  html_document: default
+  word_document: default
+---
+```{r}
+# Enables us to read excel files
+library("readxl")
+# Allows us to do data processing and clean-up
+library("tidyverse")
+# Enables us to write to an excel file
+library("writexl")
+# GGally alows us to use their pairs funtion
+library("GGally")
+# ggplot2 lets us make pretty graphs
+library("ggplot2")
+# ggpubr 
+library("ggpubr")
+```
+
+```{r, progress = FALSE}
+bio_clinical <- read_excel("data_merges\\Biomarker_Assays_and_Clinical_Data_20221122.xlsx")
+
+# creates new columns for the log transformations of the biomarker concentrations 
+bio_clinical$log_ang2 <- log(bio_clinical$`urine_ang-2_V1 (pg/mL)`)
+bio_clinical$log_il18 <- log(bio_clinical$`urine_il18_V1 (pg/mL)`)
+bio_clinical$log_ngal <- log(bio_clinical$`urine_ngal_V1 (pg/mL)`)
+bio_clinical$log_sfas <- log(bio_clinical$`urine_sfas_V1 (pg/mL)`)
+
+# converts covid19 diagnosis to 0 for neg and 1 for pos
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'pos'] <- "1"
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'Pos'] <- "1"
+bio_clinical['COVID19'][bio_clinical['COVID19'] == 'neg'] <- "0"
+
+bio_clinical$COVID19<- as.numeric(as.character(bio_clinical$COVID19))
+
+# converts aki_hosp from numeric into a character for better visualization
+bio_clinical$aki_hosp <- as.character(bio_clinical$aki_hosp)
+bio_clinical$prevalent_aki <- as.character(bio_clinical$prevalent_aki)
+```
+
+```{r}
+bio_clinical_NA <- bio_clinical %>%
+  filter(aki_hosp != "NA")
+
+# creates a jitter plot of the ang 2 levels and the presence of incident aki
+ang2_i_jitter <-
+  ggplot(data = bio_clinical_NA,                          # selects dataframe
+         mapping = (aes(x = log_ang2, y = aki_hosp))) +   # maps variables to x and y
+  geom_jitter(width = 0,                                  # sets parameters for the jitter
+              height = 0.2) +
+  labs(x = "[Ang-2]",                                     # labels axes
+       y = " ")
+
+il18_i_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_il18, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+sfas_i_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_sfas, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+ngal_i_jitter <-
+  ggplot(data = bio_clinical_NA, 
+         mapping = (aes(x = log_ngal, y = aki_hosp))) +
+  geom_jitter(width = 0, 
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+# creates a 2x2 matrix of the four jitter plots
+incident_aki_biomarker_jitter <- ggarrange(ang2_i_jitter, il18_i_jitter, ngal_i_jitter, sfas_i_jitter,
+                    ncol = 2, 
+                    nrow = 2)
+# annotates the figure with a title and description
+incident_aki_biomarker_jitter <- annotate_figure(incident_aki_biomarker_jitter,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI 
+in CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are log transformed and taken from the first visit 
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+
+# saves the graph to the visualizations sub folder
+ggsave(file = "visualizations\\incident_aki_biomarker_jitter.png",
+       plot = iaki_biomarker_jitter,
+# specifies the dimensions of the image
+       height = 7,
+       width = 14,
+       dpi = 300,
+       units = "in")
+```
+
+
+```{r}
+# boxplot creation with incident aki data
+ang2_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_ang2, y = aki_hosp)) +
+  geom_boxplot()+
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_il18, y = aki_hosp)) +
+  geom_boxplot()+
+  labs(x = "[IL-18]",
+       y = " ")
+
+sfas_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_sfas, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[sFas]",
+       y = " ")
+
+ngal_i_box <- ggplot(data = bio_clinical_NA, aes(x = log_ngal, y = aki_hosp)) +
+  geom_boxplot()+
+  labs(x = "[NGAL]",
+       y = " ")
+
+iaki_biomarker_box <- ggarrange(ang2_i_box, il18_i_box, ngal_i_box, sfas_i_box,
+                    ncol = 2, 
+                    nrow = 2)
+iaki_biomarker_box <- annotate_figure(iaki_biomarker_box,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI 
+in CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit 
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_box.png",
+       plot = iaki_biomarker_box,
+       height = 7,
+       width = 14,
+       dpi = 300,
+       units = "in")
+```
+
+
+```{r}
+# subsets the bio_clinical_NA data by positive covid diagnosis 
+bio_clinical_covpos <- bio_clinical_NA %>%
+  filter(COVID19 == "1")
+
+# regenerating the incident aki jitter plots but subsetted by positive covid diagnosis
+ang2_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+ngal_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+sfas_i_covpos_jit <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+i_covpos_jit_grid <- ggarrange(ang2_i_covpos_jit, il18_i_covpos_jit, ngal_i_covpos_jit, sfas_i_covpos_jit,
+                               ncol = 2,
+                               nrow = 2)
+i_covpos_jit_grid <- annotate_figure(i_covpos_jit_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI
+in COVID-19 Positive CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_covpos_jitter.png",
+       plot = i_covpos_jit_grid,
+       height = 7,
+       width = 14,
+       dpi = 300,
+       units = "in")
+```
+
+
+```{r}
+# regenerating incident aki boxplots but subsetted by positive covid diagnosis
+ang2_i_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ang2, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[Ang-2]",
+       y = " ") +
+  scale_x_continuous(limits = c(1,10))
+
+il18_i_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_il18, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[IL-18]",
+       y = " ") +
+  scale_x_continuous(limits = c(3,12))
+
+ngal_i_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_ngal, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[NGAL]",
+       y = " ") +
+  scale_x_continuous(limits = c(7.5,17.5))
+
+sfas_i_covpos_box <- ggplot(data = bio_clinical_covpos, aes(x = log_sfas, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[sFas]",
+       y = " ") +
+  scale_x_continuous(limits = c(5,12))
+
+i_covpos_box_grid <- ggarrange(ang2_i_covpos_box, il18_i_covpos_box, ngal_i_covpos_box, sfas_i_covpos_box,
+                               ncol = 2,
+                               nrow = 2)
+i_covpos_box_grid <- annotate_figure(i_covpos_box_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI
+in COVID-19 Positive CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_covpos_box.png",
+       plot = i_covpos_box_grid,
+       height = 7,
+       width = 14,
+       dpi = 300,
+       units = "in")
+```
+
+```{r}
+# subsets the bio_clinical_NA data by negative covid diagnosis 
+bio_clinical_covneg <- bio_clinical_NA %>%
+  filter(COVID19 == "0")
+
+# regenerating the incident aki jitter plots but subsetted by negative covid diagnosis
+ang2_i_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_ang2, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[Ang-2]",
+       y = " ")
+
+il18_i_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_il18, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[IL-18]",
+       y = " ")
+
+ngal_i_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_ngal, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[NGAL]",
+       y = " ")
+
+sfas_i_covneg_jit <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = aki_hosp)) +
+  geom_jitter(width = 0,
+              height = 0.2) +
+  labs(x = "[sFas]",
+       y = " ")
+
+i_covneg_jit_grid <- ggarrange(ang2_i_covneg_jit, il18_i_covneg_jit, ngal_i_covneg_jit, sfas_i_covneg_jit,
+                               ncol = 2,
+                               nrow = 2)
+i_covneg_jit_grid <- annotate_figure(i_covneg_jit_grid,
+                top = text_grob("Biomarker Concentrations and Rates of Incident AKI
+in COVID-19 Negative CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_covneg_jitter.png",
+       plot = i_covneg_jit_grid,
+       height = 7,
+       width = 14,
+       dpi = 300,
+       units = "in")
+```
+
+
+```{r}
+# regenerating incident aki boxplots but subsetted by negative covid diagnosis
+ang2_i_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_ang2, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[Ang-2]",
+       y = " ") +
+  scale_x_continuous(limits = c(1,10))
+
+il18_i_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_il18, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[IL-18]",
+       y = " ") +
+  scale_x_continuous(limits = c(3,12))
+
+ngal_i_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_ngal, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[NGAL]",
+       y = " ") +
+  scale_x_continuous(limits = c(7.5,17.5))
+
+sfas_i_covneg_box <- ggplot(data = bio_clinical_covneg, aes(x = log_sfas, y = aki_hosp)) +
+  geom_boxplot() +
+  labs(x = "[sFas]",
+       y = " ") +
+  scale_x_continuous(limits = c(5,12))
+
+i_covneg_box_grid <- ggarrange(ang2_i_covneg_box, il18_i_covneg_box, ngal_i_covneg_box, sfas_i_covneg_box,
+                              ncol = 2,
+                              nrow = 2)
+i_covneg_box_grid <- annotate_figure(i_covneg_box_grid,
+                 top = text_grob("Biomarker Concentrations and Rates of Incident AKI
+ in COVID-19 Negative CHROME Participants",
+                                size = 12,
+                                face = "bold"),
+                 bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                                size = 10,
+                                face = "bold"))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_covneg_box.png",
+       plot = i_covneg_box_grid,
+       height = 7,
+       width = 14,
+       dpi = 300,
+       units = "in")
+```
+
+```{r}
+# creates a comparison plot grid displaying biomarker concentrations and covid diagnosis
+
+cov_biomarker_grid <- ggarrange(ang2_i_covneg_box, il18_i_covneg_box, ngal_i_covneg_box, sfas_i_covneg_box,
+                           ang2_i_covpos_box, il18_i_covpos_box, ngal_i_covpos_box, sfas_i_covpos_box,
+                           ncol = 4,
+                           nrow = 2)
+cov_biomarker_grid <- annotate_figure(cov_biomarker_grid,
+                top = text_grob("Biomarker Concentrations, Rates of Incident AKI, and COVID-19 Status
+in CHROME Participants",
+                      size = 12,
+                      face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                      size = 10,
+                      face = "bold"),
+                left = text_grob("      COVID-19 Positive                                             COVID-19 Negative",
+                      rot = 90,
+                      face = "bold",
+                      size = 10))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_covid.png",
+       plot = cov_biomarker_grid,
+       height = 7,
+       width = 14,
+       dpi = 300)
+```
+
+```{r}
+# creates a comparison plot grid displaying biomarker concentrations and covid diagnosis
+
+cov_biomarker_grid <- ggarrange(ang2_i_covneg_jit, il18_i_covneg_jit, ngal_i_covneg_jit, sfas_i_covneg_jit,
+                           ang2_i_covpos_jit, il18_i_covpos_jit, ngal_i_covpos_jit, sfas_i_covpos_jit,
+                           ncol = 4,
+                           nrow = 2)
+cov_biomarker_grid <- annotate_figure(cov_biomarker_grid,
+                top = text_grob("Biomarker Concentrations, Rates of Incident AKI, and COVID-19 Status
+in CHROME Participants",
+                      size = 12,
+                      face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                      size = 10,
+                      face = "bold"),
+                left = text_grob("      COVID-19 Positive                                             COVID-19 Negative",
+                      rot = 90,
+                      face = "bold",
+                      size = 10))
+
+ggsave(file = "visualizations\\incident_aki_biomarker_covid_jit.png",
+       plot = cov_biomarker_grid,
+       height = 7,
+       width = 14,
+       dpi = 300)
+```
+
