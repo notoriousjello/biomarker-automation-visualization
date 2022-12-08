@@ -1,0 +1,98 @@
+---
+title: "MSD Data Processing Automation"
+author: "Jordan Lo"
+date: "2022-12-08"
+output: html_document
+---
+```{r}
+# tidyverse allows us to do our data processing
+library("tidyverse")
+# readxl allows us to read excel files
+library("readxl")
+# writexl allows us to write to excel files
+library("writexl")
+# tidyr lets us reshape our long data into wide data
+library("tidyr")
+```
+
+```{r}
+# reads the raw data excel file and stores it as a variable
+raw_data <- read_excel("raw_data\\CHR_US_V1_Ang2_Plate1 (redo 12.7.22).xlsx", 
+                       sheet = "RawData")
+
+raw_data[14:18] <- as.data.frame(sapply(raw_data[14:18], as.numeric))
+```
+
+
+```{r}
+# stores a subset of columns by their index from raw_data as long_data
+long_data <- raw_data[c(1,2,6:7,15:21)]
+```
+
+```{r}
+# selects all distinct rows in the "Sample" column of long_data
+wide_data <- distinct(long_data, 
+                      Sample,
+                      .keep_all = TRUE)
+
+# selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
+wide_data <- wide_data[c(2, 7)]
+# removes the blank sample
+wide_data <- wide_data %>%
+  filter(Sample != "Blank")
+```
+
+```{r}
+# removes the standard and QC samples 
+wide_sample_data <- wide_data[!is.na(as.numeric(wide_data$Sample)), ]
+```
+
+```{r}
+# creates a new data frame looking at lowest limit of detection (LLOD)
+llod <- raw_data[c(2:4, 8, 16, 19)]
+
+# creates a data frame that tallies the number of samples with a detection range at or below the detection/fit curve
+llod_count <- llod[!is.na(as.numeric(llod$Sample)), ] %>%
+  group_by(`Detection Range`) %>%
+  tally()
+
+# converts the long data into wide format
+llod_count <- pivot_wider(llod_count,
+                          names_from = `Detection Range`,
+                          values_from = `n`)
+```
+
+```{r}
+# takes the Sample ID and Calc. Conc. CV from the long data set
+intraplate_cvs <-long_data[c(2, 8)]
+
+intraplate_cvs <- intraplate_cvs %>%
+  filter(Sample != "Blank")
+
+intraplate_cvs <- distinct(intraplate_cvs,
+                           Sample,
+                           .keep_all = TRUE)
+
+# adds a new column specifying the number of replicates
+intraplate_cvs$`n =` <- 2
+```
+
+```{r}
+# creates a new spreadsheet of the listed data frames
+write_xlsx(
+  # sets the sheet names -- format is Sheet Name = DF Name
+  list(RawData = raw_data, 
+       LongData = long_data,
+       WideData = wide_data,
+       WideSampleData = wide_sample_data,
+       LLODs = llod,
+       LLODS_count = llod_count,
+       IntraplateCVs = intraplate_cvs
+       ),
+  # sets the path where the excel will be saved
+  path = "chr_test.xlsx",
+  # writes columns to top of file
+  col_names = TRUE
+)
+```
+
