@@ -17,8 +17,9 @@ library("ggplot2")
 
 ```{r}
 # assigns the plate excel sheet to a variable
-biomarker <- read_excel("raw_data\\CHR_US_V1_Ang-2_MSD_Plates1-6_Data_NO_SKS_JH_4-7-2022.xlsx", 
+biomarker <- read_excel("raw_data\\.xlsx", 
                         sheet = "RawData")
+
 
 # replaces NaN with NA
 biomarker$`Calc. Conc. Mean`[is.nan(biomarker$`Calc. Conc. Mean`)] <- NA
@@ -30,12 +31,12 @@ biomarker$`Calc. Conc. Mean` <- as.numeric(as.character(biomarker$`Calc. Conc. M
 biomarker$log_calc_conc_mean <- log(biomarker$`Calc. Conc. Mean`)
 
 # changes plate names
-biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate1b_23L0EAV560"] <- "Plate 1"
-biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate2_23L0EA9196"] <- "Plate 2"
-biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate3_23L0EA3190"] <- "Plate 3"
-biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate4_23L0EAC191"] <- "Plate 4"
-biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate5_23L0EA2192"] <- "Plate 5"
-biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate6_23L0EAG193"] <- "Plate 6"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 1"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 2"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 3"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 4"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 5"
+biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 6"
 
 ```
 
@@ -49,13 +50,13 @@ plate_groups <- ggplot(data = biomarker,
 # creates the axes labels as well as the title and subtitle
   labs(x = "Plate Number",
        y = "LN Calculated Concentration Mean",
-       title = "Batch Effects in MSD Biomarker Assays",
-       subtitle = "Plates ran on 2022-04-07 by Nick O'Connor, Sharon Sahi, and Julia Hallowell") +
+       title = "",
+       subtitle = "") +
   theme(plot.subtitle = element_text(size = 8)) # reduces the size of the subtitle
   
 # saves the plot as a PNG
-ggsave(file = "visualizations\\20220407_MSD_Batch_Effect.png",  # file output location
-       plot = plate_groups,                                     # plot to output
+ggsave(file = "visualizations\\.png",  # file output location
+       plot = plate_groups,                                           # plot to output
        height = 7,                                             
        width = 10)
 ```

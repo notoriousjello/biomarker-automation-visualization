@@ -319,11 +319,37 @@ in CHROME Participants",
                       face = "bold",
                       size = 10))
 
-ggsave(file = "visualizations\\biomarker_covid_prevalent_aki.png",
+ggsave(file = "visualizations\\prevalent_aki_covid_biomarker_box_grid.png",
        plot = cov_biomarker_grid,
        height = 7,
        width = 14,
        dpi = 300)
 ```
 
+```{r}
+
+cov_biomarker_grid_jitter <- ggarrange(ang2_p_covneg_jit, il18_p_covneg_jit, ngal_p_covneg_jit, sfas_p_covneg_jit,
+                           ang2_p_covpos_jit, il18_p_covpos_jit, ngal_p_covpos_jit, sfas_p_covpos_jit,
+                           ncol = 4,
+                           nrow = 2)
+cov_biomarker_grid_jitter <- annotate_figure(cov_biomarker_grid_jitter,
+                top = text_grob("Biomarker Concentrations, Rates of Prevalent AKI, and COVID-19 Status
+in CHROME Participants",
+                      size = 12,
+                      face = "bold"),
+                bottom = text_grob("Concentrations are LN transformed and taken from the first visit
+0 = No AKI | 1 = AKI",
+                      size = 10,
+                      face = "bold"),
+                left = text_grob("      COVID-19 Positive                                             COVID-19 Negative",
+                      rot = 90,
+                      face = "bold",
+                      size = 10))
+
+ggsave(file = "visualizations\\prevalent_aki_covid_biomarker_jitter_grid.png",
+       plot = cov_biomarker_grid_jitter,
+       height = 7,
+       width = 14,
+       dpi = 300)
+```
 
