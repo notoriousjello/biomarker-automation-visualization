@@ -1,4 +1,4 @@
-# CHROME Study Visualizations
+# CHROME Study Visualizations and Data Processing
 
 *PROJECT SUMMARY*
 
