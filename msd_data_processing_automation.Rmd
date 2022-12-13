@@ -32,12 +32,34 @@ raw_data[14:18] <- as.data.frame(
   sapply(
     raw_data[14:18], 
     as.numeric))
+
+# reads the excel file and stores it as a variable
+raw_data <- read_excel("raw_data\\CHR_US_V1_Ang2_Plate1 (redo 12.7.22).xlsx", 
+                       sheet = "RawData")
+
+raw_data$Visit <- ifelse(grepl("_V1", raw_data$Sample), "V1",
+                  ifelse(grepl("_V2", raw_data$Sample), "V2", NA))
+raw_data <- raw_data %>%
+  relocate(`Visit`,
+           .after = `Sample`)
 ```
 
 -------------------------------------------------------LONG DATA-----------------------------------------------------
 ```{r}
 # stores a subset of columns by their index from raw_data as long_data
-long_data <- raw_data[c(1,2,6:7,15:21)]
+long_data <- raw_data[,c("Plate Name",
+                        "Sample",
+                        "Visit",
+                        "Assay",
+                        "Dilution",
+                        "Concentration",
+                        "% Recovery Mean",
+                        "Calc. Concentration",
+                        "Calc. Conc. Mean",
+                        "Calc. Conc. CV",
+                        "Detection Range",
+                        "Detection Limits: Calc. High",
+                        "Detection Limits: Calc. Low...21")]
 long_data <- long_data[order(
   long_data$Sample),]
 ```
@@ -50,7 +72,9 @@ wide_data <- distinct(long_data,
                       .keep_all = TRUE)
 
 # selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
-wide_data <- wide_data[c(2, 7)]
+wide_data <- wide_data[,c("Sample",
+                          "Visit",
+                         "Calc. Conc. Mean")]
 # removes the blank sample
 wide_data <- wide_data %>%
   filter(Sample != "Blank")
@@ -64,8 +88,7 @@ wide_data <- wide_data %>%
 
 
 # creates a dataframe with just samples
-wide_sample <- wide_data[!is.na(as.numeric(wide_data$Sample)), ] %>%
-  add_column(empty_column = NA)
+wide_sample <- wide_data[!is.na(as.numeric(wide_data$Sample)), ]
 
 # converts the Sample column into a numeric data type
 wide_sample$Sample <- as.numeric(as.character(wide_sample$Sample))
@@ -74,17 +97,17 @@ wide_sample <- wide_sample[order(
 
 # standard df creation 
 wide_std <- wide_data %>%
-  filter(grepl("S", wide_data$Sample)) %>%
-  add_column(empty_column = NA) 
+  filter(grepl("S", wide_data$Sample))
 colnames(wide_std) <- paste(colnames(wide_std), 
                             "std", 
                             sep = "_")
 colnames(wide_std)[1] = "Standard"
 
 # qc df creation
-wide_qc <- long_data[c(2,7)] %>%
-  filter(grepl("QC", long_data$Sample)) %>%
-  add_column(empty_column = NA)
+wide_qc <- long_data[,c("Sample",
+                        "Visit",
+                        "Calc. Conc. Mean")] %>%
+  filter(grepl("QC", long_data$Sample))
 
 wide_qc$`Calc. Conc. Mean` <- mean(wide_qc$`Calc. Conc. Mean`)                  # takes mean of concentrations
 wide_qc <- distinct(wide_qc,                                                    # takes distinct observations
@@ -116,11 +139,15 @@ wide_sample_data <- wide_sample_data[order(
 -----------------------------------------------------LLODS-----------------------------------------------------------
 ```{r}
 # creates a new data frame looking at lowest limit of detection (LLOD)
-llod <- raw_data[c(2:4, 8, 16, 19)]
+llod <- raw_data[,c("Sample",
+                    "Visit",
+                    "Well",
+                    "Signal",
+                    "Calc. Concentration",
+                    "Detection Range")]
 
 # creates an LLOD dataframe with just samples
-llod_sample <- llod[!is.na(as.numeric(llod$Sample)), ] %>%
-  add_column(empty_column = NA)
+llod_sample <- llod[!is.na(as.numeric(llod$Sample)), ]
 # converts the Sample column into a numeric data type
 llod_sample$Sample <- as.numeric(as.character(llod_sample$Sample))
 llod_sample <- llod_sample[order(
@@ -128,8 +155,7 @@ llod_sample <- llod_sample[order(
 
 # creates an LLOD dataframe with just standards
 llod_std <- llod %>%
-  filter(grepl("S", llod$Sample)) %>%
-  add_column(empty_column = NA)
+  filter(grepl("S", llod$Sample))
 colnames(llod_std) <- paste(colnames(llod_std), 
                             "std", 
                             sep = "_")
@@ -137,8 +163,7 @@ colnames(llod_std)[1] = "Standard"
 
 # creates an LLOD dataframe with just QC
 llod_qc <- llod %>%
-  filter(grepl("QC", llod$Sample)) %>%
-  add_column(empty_column = NA)
+  filter(grepl("QC", llod$Sample))
 colnames(llod_qc) <- paste(colnames(llod_qc), 
                            "qc", 
                            sep = "_")
@@ -164,15 +189,15 @@ llod_group <- qpcR:::cbind.na(llod_sample,
 -------------------------------------------------------INTRAPLATE CVs-----------------------------------------------
 ```{r}
 # takes the Sample ID and Calc. Conc. CV from the long data set
-intraplate_cvs <-long_data[c(2, 8)]
+intraplate_cvs <-long_data[,c("Sample", 
+                              "Calc. Conc. CV")]
 
 intraplate_cvs <- intraplate_cvs %>%
   filter(Sample != "Blank")
 
 # creating separate data frames for QC/Std/Samples to improve data clarity
 intraplate_cvs_sample <- intraplate_cvs[!is.na(as.numeric(intraplate_cvs$Sample)), ] %>%
-  add_column(n = 2,
-             empty_column = NA)
+  add_column(n = 2)
 
 intraplate_cvs_sample$Sample <- as.numeric(as.character(intraplate_cvs_sample$Sample))
 intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
@@ -184,8 +209,7 @@ intraplate_cvs_sample <- intraplate_cvs_sample[order(
 # std
 intraplate_cvs_std <- intraplate_cvs %>%
   filter(grepl("S", intraplate_cvs$Sample)) %>%
-  add_column(n = 2, 
-            empty_column = NA)
+  add_column(n = 2)
 intraplate_cvs_std <- distinct(intraplate_cvs_std,
                            Sample,
                            .keep_all = TRUE)

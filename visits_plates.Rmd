@@ -1,0 +1,36 @@
+---
+title: "TNFR-1"
+author: "Jordan Lo"
+date: "2022-12-12"
+output: html_document
+---
+
+------------------------------------------------------PACKAGE LOADING------------------------------------------------
+```{r}
+# tidyverse allows us to do our data processing
+library("tidyverse")
+# readxl allows us to read excel files
+library("readxl")
+# writexl allows us to write to excel files
+library("writexl")
+# tidyr lets us reshape our long data into wide data
+library("tidyr")
+# qpcR lets us merge data frames side by side
+library("qpcR")
+```
+
+--------------------------------------------------------RAW DATA-----------------------------------------------------
+```{r}
+# reads the excel file and stores it as a variable
+raw_data <- read_excel("raw_data\\ALL_TNFR1_Data_Set1-11.xlsx", 
+                       sheet = "RawData")
+
+raw_data$Visit <- ifelse(grepl("_V1", raw_data$Sample), "V1",
+                  ifelse(grepl("_V2", raw_data$Sample), "V2", NA))
+raw_data <- raw_data %>%
+  relocate(`Visit`,
+           .after = `Sample`)
+
+head(raw_data)
+```
+
