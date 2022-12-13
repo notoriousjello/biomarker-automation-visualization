@@ -27,21 +27,12 @@ library("qpcR")
 raw_data <- read_excel("raw_data\\CHR_US_V1_Ang2_Plate1 (redo 12.7.22).xlsx", 
                        sheet = "RawData")
 
+
 # converts columns 14-18 with NaN into NA by transforming variable from char into numeric
 raw_data[14:18] <- as.data.frame(
   sapply(
     raw_data[14:18], 
     as.numeric))
-
-# reads the excel file and stores it as a variable
-raw_data <- read_excel("raw_data\\CHR_US_V1_Ang2_Plate1 (redo 12.7.22).xlsx", 
-                       sheet = "RawData")
-
-raw_data$Visit <- ifelse(grepl("_V1", raw_data$Sample), "V1",
-                  ifelse(grepl("_V2", raw_data$Sample), "V2", NA))
-raw_data <- raw_data %>%
-  relocate(`Visit`,
-           .after = `Sample`)
 ```
 
 -------------------------------------------------------LONG DATA-----------------------------------------------------
@@ -49,7 +40,6 @@ raw_data <- raw_data %>%
 # stores a subset of columns by their index from raw_data as long_data
 long_data <- raw_data[,c("Plate Name",
                         "Sample",
-                        "Visit",
                         "Assay",
                         "Dilution",
                         "Concentration",
@@ -73,19 +63,10 @@ wide_data <- distinct(long_data,
 
 # selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
 wide_data <- wide_data[,c("Sample",
-                          "Visit",
                          "Calc. Conc. Mean")]
 # removes the blank sample
 wide_data <- wide_data %>%
   filter(Sample != "Blank")
-
-
-
-# changes the column name
-  # CHANGE THIS TO WHATEVER BIOMARKER YOU RAN THE PLATE ON
-
-
-
 
 # creates a dataframe with just samples
 wide_sample <- wide_data[!is.na(as.numeric(wide_data$Sample)), ]
@@ -105,7 +86,6 @@ colnames(wide_std)[1] = "Standard"
 
 # qc df creation
 wide_qc <- long_data[,c("Sample",
-                        "Visit",
                         "Calc. Conc. Mean")] %>%
   filter(grepl("QC", long_data$Sample))
 
@@ -140,7 +120,6 @@ wide_sample_data <- wide_sample_data[order(
 ```{r}
 # creates a new data frame looking at lowest limit of detection (LLOD)
 llod <- raw_data[,c("Sample",
-                    "Visit",
                     "Well",
                     "Signal",
                     "Calc. Concentration",
