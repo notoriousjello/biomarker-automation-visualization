@@ -9,35 +9,57 @@ output: html_document
 library("readxl")
 # Allows us to do data processing and clean-up
 library("tidyverse")
-# Enables us to write to an excel file
-library("writexl")
 # ggplot2 lets us make pretty graphs
 library("ggplot2")
 ```
 
 ```{r}
 # assigns the plate excel sheet to a variable
-biomarker <- read_excel("raw_data\\.xlsx", 
-                        sheet = "RawData")
+biomarker <- read_excel("raw_data\\ALL_TNFR1_Data_Set1-11.xlsx", 
+                        sheet = "RawData") %>%
+  separate(col = Sample,
+           into = c("Sample", "Visit"),
+           sep = "_")
 
+# makes a list of all of the plates in the plate name column
+biomarker_plates <- as.list(unique(
+  biomarker$`Plate Name`))
+#print(biomarker_plates)
 
 # replaces NaN with NA
 biomarker$`Calc. Conc. Mean`[is.nan(biomarker$`Calc. Conc. Mean`)] <- NA
 
 # converts the variable type into numeric
 biomarker$`Calc. Conc. Mean` <- as.numeric(as.character(biomarker$`Calc. Conc. Mean`))
+#biomarker$Sample <- as.numeric(as.character(biomarker$Sample))
+
+#biomarker <- biomarker %>%
+  #drop_na(Sample)
 
 # takes the natural log of the calc conc mean
 biomarker$log_calc_conc_mean <- log(biomarker$`Calc. Conc. Mean`)
 
 # changes plate names
-biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 1"
-biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 2"
-biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 3"
-biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 4"
-biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 5"
-biomarker$`Plate Name`[biomarker$`Plate Name` == ""] <- "Plate 6"
+  # Figure out a way to do this without having to copy and paste so much 
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14ARH46_Set1"] <- "1"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14A7H47_Set2"] <- "2"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14AXI98_Set3"] <- "3"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14AEH49_Set4"] <- "4"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14ALI84_Set5"] <- "5"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14AK901_Set6"] <- "6"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14A6E80_Set7"] <- "7"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14A0902_Set8"] <- "8"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14AT903_Set9"] <- "9"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14AKJ95_Set10"] <- "10"
+biomarker$`Plate Name`[biomarker$`Plate Name` == "Plate_23M14ASH63_Set11"] <- "11"
 
+biomarker$`Plate Name` <- as.numeric(as.character(biomarker$`Plate Name`))
+biomarker <- biomarker[order(biomarker$`Plate Name`),]
+biomarker$`Plate Name` <- as.character(as.numeric(biomarker$`Plate Name`))
+
+
+biomarker_qc <- biomarker %>%
+  filter(log_calc_conc_mean < 5)
 ```
 
 ```{r}
@@ -50,12 +72,13 @@ plate_groups <- ggplot(data = biomarker,
 # creates the axes labels as well as the title and subtitle
   labs(x = "Plate Number",
        y = "LN Calculated Concentration Mean",
-       title = "",
+       title = "Batch Effects in TNFR-1 Plates",
        subtitle = "") +
-  theme(plot.subtitle = element_text(size = 8)) # reduces the size of the subtitle
-  
+  # reduces the size of the subtitle
+  theme(plot.subtitle = element_text(size = 8)) +
+  ylim(5,11)
 # saves the plot as a PNG
-ggsave(file = "visualizations\\.png",  # file output location
+ggsave(file = "visualizations\\TNFR-1_Batch_Effect.png",  # file output location
        plot = plate_groups,                                           # plot to output
        height = 7,                                             
        width = 10)
