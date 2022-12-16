@@ -1,12 +1,3 @@
----
-title: "TNFR-1"
-author: "Jordan Lo"
-date: "2022-12-12"
-output: html_document
----
-
-------------------------------------------------------PACKAGE LOADING------------------------------------------------
-```{r}
 # tidyverse allows us to do our data processing
 library("tidyverse")
 # readxl allows us to read excel files
@@ -17,61 +8,34 @@ library("writexl")
 library("tidyr")
 # qpcR lets us merge data frames side by side
 library("qpcR")
-```
 
---------------------------------------------------------RAW DATA-----------------------------------------------------
-```{r}
-# reads the raw data excel file and stores it as a variable
-# FOR NEW USERS:
-#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw_data <- read_excel("raw_data\\ALL_TNFR1_Data_Set1-11.xlsx", 
-                       sheet = "RawData")
-README <- read_excel("ReadME_Template.xlsx")
+automation <- function(raw_data) {
 
-# makes a list of all of the plates in the plate name column
-biomarker_plates <- as.list(unique(
-  raw_data$`Plate Name`))
-print(biomarker_plates)
-
-# reads a specific plate from the raw data file
-raw_data <- raw_data %>%
-  filter(`Plate Name` == "Plate_23M14ASH63_Set11")
-```
-
--------------------------------------------------------LONG DATA-----------------------------------------------------
-```{r}
+  
 # stores a subset of columns from raw_data as long_data
 long_data <- raw_data[,c("Plate Name",
-                        "Sample",
-                        "Assay",
-                        "Dilution",
-                        "Concentration",
-                        "% Recovery Mean",
-                        "Calc. Concentration",
-                        "Calc. Conc. Mean",
-                        "Calc. Conc. CV",
-                        "Detection Range",
-                        "Detection Limits: Calc. High",
-                        "Detection Limits: Calc. Low")]
+                         "Sample",
+                         "Assay",
+                         "Dilution",
+                         "Concentration",
+                         "% Recovery Mean",
+                         "Calc. Concentration",
+                         "Calc. Conc. Mean",
+                         "Calc. Conc. CV",
+                         "Detection Range",
+                         "Detection Limits: Calc. High",
+                         "Detection Limits: Calc. Low")]
 
 # separates the sample column into visit and sample number
 long_data <- raw_data %>% 
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
-```
-
--------------------------------------------------------WIDE DATA-----------------------------------------------------
-```{r}
-# selects all distinct rows in the "Sample" column of long_data
-#wide_data <- distinct(raw_data, 
-#                      Sample,
-#                      .keep_all = TRUE)
 
 # selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
 wide_data <- raw_data[,c("Sample",
-                          "Assay",
-                          "Calc. Conc. Mean")] %>% 
+                         "Assay",
+                         "Calc. Conc. Mean")] %>% 
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
@@ -79,10 +43,7 @@ wide_data <- raw_data[,c("Sample",
 wide_data <- wide_data %>%
   filter(Sample != "Blank") %>%
   filter(Sample != "BLANK")
-```
 
-
-```{r}
 #----------------------------------------------------WIDE SAMPLES----------------------------------------------------
 # creates the initial dataframe
 wide_sample <- wide_data
@@ -103,10 +64,7 @@ wide_sample <- wide_sample %>%
   pivot_wider(names_from = c(`Assay`, `Visit`), 
               values_from = `Calc. Conc. Mean`,
               names_sep = "_")
-```
 
-
-```{r}
 #------------------------------------------------------WIDE STANDARDS------------------------------------------------
 # filters the wide_data to just the standard samples
 wide_std <- wide_data %>%
@@ -116,9 +74,9 @@ wide_std <- wide_data %>%
 
 # removes the replicate measurements of the standard 
 wide_std <- wide_std %>%
-   unite("Sample",
-         Sample:Assay,
-         sep = "_") %>%
+  unite("Sample",
+        Sample:Assay,
+        sep = "_") %>%
   distinct(Sample,
            .keep_all = TRUE) %>%
   separate(Sample,
@@ -131,10 +89,7 @@ wide_std <- wide_std %>%
               values_from = `Calc. Conc. Mean`,
               names_sep = "_")
 
-```
 
-
-```{r}
 #-------------------------------------------------------WIDE QC------------------------------------------------------
 # establishes the inital wide_qc dataframe
 wide_qc <- long_data[,c("Sample",
@@ -149,9 +104,9 @@ wide_qc$`Calc. Conc. Mean` <- as.numeric(as.character(wide_qc$`Calc. Conc. Mean`
 
 # takes the mean of the qc samples by assay and then pivots the table into wide format
 wide_qc <- wide_qc %>%
-   unite("Sample",
-         Sample:Assay,
-         sep = "_") %>%
+  unite("Sample",
+        Sample:Assay,
+        sep = "_") %>%
   group_by(Sample) %>%
   summarise("Calc. Conc. Mean" = mean(`Calc. Conc. Mean`),
             .groups = "drop") %>%
@@ -160,16 +115,10 @@ wide_qc <- wide_qc %>%
            sep = "_") %>%
   pivot_wider(names_from = Assay,
               values_from = `Calc. Conc. Mean`)
-```
 
-
-```{r}
 # df merging that places the above data frames side by side
 wide_data_group <- qpcR:::cbind.na(wide_sample, wide_std, wide_qc)
-```
 
------------------------------------------------------LLODS-----------------------------------------------------------
-```{r}
 # creates a new data frame looking at lowest limit of detection (LLOD)
 llod <- raw_data[,c("Sample",
                     "Well",
@@ -180,10 +129,7 @@ llod <- raw_data[,c("Sample",
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
-```
 
-
-```{r}
 #----------------------------------------------------LLOD SAMPLES----------------------------------------------------
 llod_sample <- llod 
 llod_sample$Sample <- as.numeric(as.character(llod_sample$Sample))
@@ -191,10 +137,7 @@ llod_sample <- llod_sample %>%
   drop_na(Sample)
 llod_sample <- llod_sample[order(
   llod_sample$Sample),]
-```
 
-
-```{r}
 #--------------------------------------------------------LLOD STANDARDS----------------------------------------------
 llod_std <- llod %>%
   filter(grepl("S", llod$Sample)) %>%
@@ -203,10 +146,7 @@ colnames(llod_std) <- paste(colnames(llod_std),
                             "std", 
                             sep = "_")
 colnames(llod_std)[1] = "Standard"
-```
 
-
-```{r}
 #---------------------------------------------------------LLOD QC----------------------------------------------------
 llod_qc <- llod %>%
   filter(grepl("QC", llod$Sample)) %>%
@@ -215,19 +155,13 @@ colnames(llod_qc) <- paste(colnames(llod_qc),
                            "qc", 
                            sep = "_")
 colnames(llod_qc)[1] = "QC"
-```
 
-
-```{r}
 #---------------------------------------------------------LLOD COUNT-------------------------------------------------
 # creates a data frame that tallies the number of samples with a detection range at or below the detection/fit curve
 llod_count <- llod_sample %>%
   group_by(`Detection Range`) %>%
   tally()
-```
 
-
-```{r}
 # converts the long data into wide format
 llod_count <- pivot_wider(llod_count,
                           names_from = `Detection Range`,
@@ -238,28 +172,22 @@ llod_group <- qpcR:::cbind.na(llod_sample,
                               llod_std, 
                               llod_qc, 
                               llod_count)
-```
 
--------------------------------------------------------INTRAPLATE CVs-----------------------------------------------
-```{r}
 # takes the Sample ID and Calc. Conc. CV from the long data set
 intraplate_cvs <-raw_data[,c("Sample",
-                              "Assay", 
-                              "Calc. Conc. CV")]
+                             "Assay", 
+                             "Calc. Conc. CV")]
 
 intraplate_cvs <- intraplate_cvs %>%
   filter(Sample != "Blank") %>%
   filter(Sample != "BLANK")
-```
 
-
-```{r}
 #---------------------------------------------------INTRA SAMPLES----------------------------------------------------
 intraplate_cvs_sample <- intraplate_cvs %>%
   add_column(n = 1)
 intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
-                           Sample,
-                           .keep_all = TRUE) %>%
+                                  Sample,
+                                  .keep_all = TRUE) %>%
   separate(col = Sample,
            into = c("Sample","Visit"),
            sep = "_")
@@ -268,25 +196,19 @@ intraplate_cvs_sample <- intraplate_cvs_sample %>%
   drop_na(Sample)
 intraplate_cvs_sample <- intraplate_cvs_sample[order(
   intraplate_cvs_sample$Sample),]
-```
 
-
-```{r}
 #---------------------------------------------------INTRA STANDARDS--------------------------------------------------
 intraplate_cvs_std <- intraplate_cvs %>%
   filter(grepl("S", intraplate_cvs$Sample)) %>%
   add_column(n = 2)
 intraplate_cvs_std <- distinct(intraplate_cvs_std,
-                           Sample,
-                           .keep_all = TRUE)
+                               Sample,
+                               .keep_all = TRUE)
 colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       "std",
                                       sep = "_")
 colnames(intraplate_cvs_std)[1] = "Standard"
-```
 
-
-```{r}
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
   filter(grepl("QC", intraplate_cvs$Sample)) %>%
@@ -294,41 +216,28 @@ intraplate_cvs_qc <- intraplate_cvs %>%
 intraplate_cvs_qc$`Calc. Conc. CV` <- as.numeric(as.character(intraplate_cvs_qc$`Calc. Conc. CV`))
 intraplate_cvs_qc$`Calc. Conc. CV` <- mean(intraplate_cvs_qc$`Calc. Conc. CV`)
 intraplate_cvs_qc <- distinct(intraplate_cvs_qc,
-                           Sample,
-                           .keep_all = TRUE)
+                              Sample,
+                              .keep_all = TRUE)
 colnames(intraplate_cvs_qc) <- paste(colnames(intraplate_cvs_qc),
-                                              "QC",
-                                              sep = "_")
+                                     "QC",
+                                     sep = "_")
 colnames(intraplate_cvs_qc)[1] = "QC"
-```
 
-
-```{r}
 intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample, 
                                   intraplate_cvs_std, 
                                   intraplate_cvs_qc)
-```
 
--------------------------------------------------------EXCEL OUTPUT------------------------------------------------
-```{r}
+#--------------------------------------------------------------------------------------------------------------------
 Plots <- data.frame()
+README <- read_excel("ReadME_Template.xlsx")
 
-# creates a new spreadsheet of the listed data frames
-write_xlsx(
-  # sets the sheet names -- format is Sheet Name = DF Name
-  list(RawData = raw_data, 
-       LongData = long_data,
-       WideData = wide_data_group,
-       WideSampleData = wide_sample,
-       LLODs = llod_group,
-       IntraplateCVs = intracvs_group,
-       Plots = Plots,
-       README = README
-       ),
-  # sets the path where the excel will be saved
-  path = "processed_data\\TNFR1_Processed_Data_Set11.xlsx",
-  #path = "test_data.xlsx",
-  # writes columns to top of file
-  col_names = TRUE
-)
-```
+output <-  list(RawData = raw_data, 
+                LongData = long_data,
+                WideData = wide_data_group,
+                WideSampleData = wide_sample,
+                LLODs = llod_group,
+                IntraplateCVs = intracvs_group,
+                Plots = Plots,
+                README = README) 
+}
+
