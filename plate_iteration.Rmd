@@ -6,16 +6,12 @@ output: html_document
 ---
 ------------------------------------------------------PACKAGE LOADING------------------------------------------------
 ```{r}
-# tidyverse allows us to do our data processing
-library("tidyverse")
 # readxl allows us to read excel files
 library("readxl")
 # writexl allows us to write to excel files
 library("writexl")
 # tidyr lets us reshape our long data into wide data
 library("tidyr")
-# qpcR lets us merge data frames side by side
-library("qpcR")
 ```
 
 

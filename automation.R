@@ -11,7 +11,7 @@ library("qpcR")
 
 automation <- function(raw_data) {
 
-  
+#-----------------------------------------------------LONG DATA------------------------------------------------------
 # stores a subset of columns from raw_data as long_data
 long_data <- raw_data[,c("Plate Name",
                          "Sample",
@@ -31,11 +31,12 @@ long_data <- raw_data %>%
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
-
+#---------------------------------------------------WIDE DATA--------------------------------------------------------
 # selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
 wide_data <- raw_data[,c("Sample",
                          "Assay",
-                         "Calc. Conc. Mean")] %>% 
+                         "Calc. Conc. Mean")] %>%
+  add_count(Sample) %>%
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
@@ -46,7 +47,10 @@ wide_data <- wide_data %>%
 
 #----------------------------------------------------WIDE SAMPLES----------------------------------------------------
 # creates the initial dataframe
-wide_sample <- wide_data
+wide_sample <- wide_data[,c("Sample",
+                            "Visit",
+                            "Assay",
+                            "Calc. Conc. Mean")]
 
 # makes the sample column a numeric data type
 wide_sample$Sample <- as.numeric(as.character(wide_sample$Sample))
@@ -173,23 +177,27 @@ llod_group <- qpcR:::cbind.na(llod_sample,
                               llod_qc, 
                               llod_count)
 
+#------------------------------------------------------INTRAPLATE CVs------------------------------------------------
 # takes the Sample ID and Calc. Conc. CV from the long data set
 intraplate_cvs <-raw_data[,c("Sample",
                              "Assay", 
-                             "Calc. Conc. CV")]
+                             "Calc. Conc. CV")] %>%
+  unite(Sample,
+        Sample:Assay,
+        sep = "_")%>%
+  add_count(Sample)
 
 intraplate_cvs <- intraplate_cvs %>%
   filter(Sample != "Blank") %>%
   filter(Sample != "BLANK")
 
 #---------------------------------------------------INTRA SAMPLES----------------------------------------------------
-intraplate_cvs_sample <- intraplate_cvs %>%
-  add_column(n = 1)
+intraplate_cvs_sample <- intraplate_cvs
 intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
                                   Sample,
                                   .keep_all = TRUE) %>%
   separate(col = Sample,
-           into = c("Sample","Visit"),
+           into = c("Sample","Visit","Assay"),
            sep = "_")
 intraplate_cvs_sample$Sample <- as.numeric(as.character(intraplate_cvs_sample$Sample))
 intraplate_cvs_sample <- intraplate_cvs_sample %>%
@@ -199,11 +207,13 @@ intraplate_cvs_sample <- intraplate_cvs_sample[order(
 
 #---------------------------------------------------INTRA STANDARDS--------------------------------------------------
 intraplate_cvs_std <- intraplate_cvs %>%
-  filter(grepl("S", intraplate_cvs$Sample)) %>%
-  add_column(n = 2)
+  filter(grepl("S", intraplate_cvs$Sample))
 intraplate_cvs_std <- distinct(intraplate_cvs_std,
                                Sample,
-                               .keep_all = TRUE)
+                               .keep_all = TRUE) %>%
+  separate(col = Sample,
+           into = c("Sample", "Assay"),
+           sep = "_")
 colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       "std",
                                       sep = "_")
@@ -211,13 +221,15 @@ colnames(intraplate_cvs_std)[1] = "Standard"
 
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
-  filter(grepl("QC", intraplate_cvs$Sample)) %>%
-  add_column(n = 4)
+  filter(grepl("QC", intraplate_cvs$Sample))
 intraplate_cvs_qc$`Calc. Conc. CV` <- as.numeric(as.character(intraplate_cvs_qc$`Calc. Conc. CV`))
 intraplate_cvs_qc$`Calc. Conc. CV` <- mean(intraplate_cvs_qc$`Calc. Conc. CV`)
 intraplate_cvs_qc <- distinct(intraplate_cvs_qc,
                               Sample,
-                              .keep_all = TRUE)
+                              .keep_all = TRUE) %>%
+  separate(col = Sample,
+           into = c("Sample", "Assay"),
+           sep = "_")
 colnames(intraplate_cvs_qc) <- paste(colnames(intraplate_cvs_qc),
                                      "QC",
                                      sep = "_")
