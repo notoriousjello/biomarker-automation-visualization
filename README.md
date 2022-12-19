@@ -11,6 +11,6 @@ The datasets from the various MSD plates initially had to be joined with each ot
 *HOW TO USE* 
 
 1. Clone the repo to your local machine
-2. To replicate the visualizations in the so-named subfolder, follow the comments in any of the biomarker_visualizaions... rmd files 
-3. To look at batch effects in your MSD runs, use the batch_effect.rmd file and follow the code and comments
+2. To generate the processed data, open the plate_iteration.rmd file
+3. Change the path in the read_excel function to the desired raw data set and change the path in the write_xlsx to your desired extension
 
