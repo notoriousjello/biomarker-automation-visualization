@@ -24,7 +24,7 @@ library("qpcR")
 # reads the raw data excel file and stores it as a variable
 # FOR NEW USERS:
 #     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw_data <- read_excel("CITRC\\raw_data\\ALL_TNFR1_Data_Set1-11.xlsx", 
+raw_data <- read_excel("CFA\\raw_data\\CF_US_KIM1_12222022_JL_Plates1-3.xlsx", 
                        sheet = "RawData")
 README <- read_excel("ReadME_Template.xlsx")
 
@@ -35,7 +35,7 @@ print(biomarker_plates)
 
 # reads a specific plate from the raw data file
 raw_data <- raw_data %>%
-  filter(`Plate Name` == "Plate_23M14ASH63_Set11")
+  filter(`Plate Name` == "Plate_25H3TA0209_Set1")
 ```
 
 -------------------------------------------------------LONG DATA-----------------------------------------------------
