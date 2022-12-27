@@ -44,31 +44,3 @@ lapply(names(plate_dataframes),
                               path = paste(x, "KIM1_PD.xlsx",
                                            sep = "_")))
 ```
-
-```{r}
-
-# reads the raw data excel file and stores it as a variable
-# FOR NEW USERS:
-#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw <- read_excel("CITRC\\raw_data\\ALL_TNFR1_Data_Set1-11.xlsx", 
-                       sheet = "RawData")
-
-# reads in the automation script as a callable function
-source("./automation.R")
-
-# splits the raw data into separate plate based data frames
-split_plates <- split(raw ,
-                      raw$`Plate Name`)
-
-# applies the automation function to the various split plates
-plate_dataframes <- lapply(split_plates, automation)
-
-# writes multiple excel files using the list of data frames above
-lapply(names(plate_dataframes),
-       function(x) write_xlsx(plate_dataframes[[x]], 
-                              # CHANGE THIS TO THE ASSAYS RUN
-                              path = paste(x, "TNFR1_PD.xlsx",
-                                           sep = "_")))
-```
-
-

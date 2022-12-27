@@ -31,15 +31,15 @@ long_data <- raw_data %>%
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
-#---------------------------------------------------WIDE DATA--------------------------------------------------------
+#-------------------------------------------------------WIDE DATA-----------------------------------------------------
+
+
 # selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
 wide_data <- raw_data[,c("Sample",
                          "Assay",
+                         "Sample Group",
                          "Calc. Conc. Mean")] %>%
-  add_count(Sample) %>%
-  separate(col = Sample,
-           into = c("Sample", "Visit"),
-           sep = "_")
+  add_count(Sample)
 # removes the blank sample
 wide_data <- wide_data %>%
   filter(Sample != "Blank") %>%
@@ -47,10 +47,16 @@ wide_data <- wide_data %>%
 
 #----------------------------------------------------WIDE SAMPLES----------------------------------------------------
 # creates the initial dataframe
-wide_sample <- wide_data[,c("Sample",
-                            "Visit",
-                            "Assay",
-                            "Calc. Conc. Mean")]
+wide_sample <- wide_data %>%
+  # concatenates columns in order to find and filter for unique observations and then separates into three new columns
+  unite("Sample",
+        Sample:Assay,
+        sep = "_") %>%
+  distinct(Sample,
+           .keep_all = TRUE) %>%
+  separate("Sample",
+           into = c("Sample", "Visit", "Assay"),
+           sep = "_")
 
 # makes the sample column a numeric data type
 wide_sample$Sample <- as.numeric(as.character(wide_sample$Sample))
@@ -65,16 +71,14 @@ wide_sample <- wide_sample[order(
 
 # pivots the long format of the original data into a wide format
 wide_sample <- wide_sample %>%
-  pivot_wider(names_from = c(`Assay`, `Visit`), 
+  pivot_wider(names_from = c(`Sample Group`,`Assay`, `Visit`), 
               values_from = `Calc. Conc. Mean`,
               names_sep = "_")
 
 #------------------------------------------------------WIDE STANDARDS------------------------------------------------
 # filters the wide_data to just the standard samples
 wide_std <- wide_data %>%
-  filter(grepl("S", wide_data$Sample)) %>%
-  # removes the visit column since it's not applicable
-  subset(select = -c(Visit))
+  filter(grepl("S", wide_data$Sample))
 
 # removes the replicate measurements of the standard 
 wide_std <- wide_std %>%
@@ -93,15 +97,17 @@ wide_std <- wide_std %>%
               values_from = `Calc. Conc. Mean`,
               names_sep = "_")
 
+# adds a separator denoting the type of sample this is (sample/QC)
+colnames(wide_std) <- paste(colnames(wide_std),
+                            "std",
+                            sep = "_")
 
 #-------------------------------------------------------WIDE QC------------------------------------------------------
 # establishes the inital wide_qc dataframe
 wide_qc <- long_data[,c("Sample",
-                        "Visit",
                         "Assay",
                         "Calc. Conc. Mean")] %>%
-  filter(grepl("QC", long_data$Sample)) %>%
-  subset(select = -c(Visit)) 
+  filter(grepl("QC", long_data$Sample))
 
 # converts the concentration column into a numeric value
 wide_qc$`Calc. Conc. Mean` <- as.numeric(as.character(wide_qc$`Calc. Conc. Mean`))
@@ -120,9 +126,14 @@ wide_qc <- wide_qc %>%
   pivot_wider(names_from = Assay,
               values_from = `Calc. Conc. Mean`)
 
+colnames(wide_qc) <- paste(colnames(wide_qc),
+                            "qc",
+                            sep = "_")
+
 # df merging that places the above data frames side by side
 wide_data_group <- qpcR:::cbind.na(wide_sample, wide_std, wide_qc)
 
+#----------------------------------------------------LLOD------------------------------------------------------------
 # creates a new data frame looking at lowest limit of detection (LLOD)
 llod <- raw_data[,c("Sample",
                     "Well",
@@ -144,8 +155,7 @@ llod_sample <- llod_sample[order(
 
 #--------------------------------------------------------LLOD STANDARDS----------------------------------------------
 llod_std <- llod %>%
-  filter(grepl("S", llod$Sample)) %>%
-  subset(select = -c(Visit))
+  filter(grepl("S", llod$Sample))
 colnames(llod_std) <- paste(colnames(llod_std), 
                             "std", 
                             sep = "_")
@@ -153,8 +163,7 @@ colnames(llod_std)[1] = "Standard"
 
 #---------------------------------------------------------LLOD QC----------------------------------------------------
 llod_qc <- llod %>%
-  filter(grepl("QC", llod$Sample)) %>%
-  subset(select = -c(Visit))
+  filter(grepl("QC", llod$Sample))
 colnames(llod_qc) <- paste(colnames(llod_qc), 
                            "qc", 
                            sep = "_")
