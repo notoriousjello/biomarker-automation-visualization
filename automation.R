@@ -38,12 +38,10 @@ long_data <- raw_data %>%
 wide_data <- raw_data[,c("Sample",
                          "Assay",
                          "Sample Group",
-                         "Calc. Conc. Mean")] %>%
-  add_count(Sample)
+                         "Calc. Conc. Mean")]
 # removes the blank sample
 wide_data <- wide_data %>%
-  filter(Sample != "Blank") %>%
-  filter(Sample != "BLANK")
+  filter(`Sample Group` != "Blanks")
 
 #----------------------------------------------------WIDE SAMPLES----------------------------------------------------
 # creates the initial dataframe
@@ -189,16 +187,18 @@ llod_group <- qpcR:::cbind.na(llod_sample,
 #------------------------------------------------------INTRAPLATE CVs------------------------------------------------
 # takes the Sample ID and Calc. Conc. CV from the long data set
 intraplate_cvs <-raw_data[,c("Sample",
+                             "Sample Group",
                              "Assay", 
-                             "Calc. Conc. CV")] %>%
+                             "Calc. Conc. CV",
+                             "Plate Name")] %>%
   unite(Sample,
         Sample:Assay,
         sep = "_")%>%
   add_count(Sample)
 
 intraplate_cvs <- intraplate_cvs %>%
-  filter(Sample != "Blank") %>%
-  filter(Sample != "BLANK")
+  filter(`Sample` != "Blanks")
+
 
 #---------------------------------------------------INTRA SAMPLES----------------------------------------------------
 intraplate_cvs_sample <- intraplate_cvs
@@ -207,12 +207,14 @@ intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
                                   .keep_all = TRUE) %>%
   separate(col = Sample,
            into = c("Sample","Visit","Assay"),
-           sep = "_")
+           sep = "_") %>%
+  subset(select = -c(`Plate Name`))
 intraplate_cvs_sample$Sample <- as.numeric(as.character(intraplate_cvs_sample$Sample))
 intraplate_cvs_sample <- intraplate_cvs_sample %>%
   drop_na(Sample)
 intraplate_cvs_sample <- intraplate_cvs_sample[order(
   intraplate_cvs_sample$Sample),]
+
 
 #---------------------------------------------------INTRA STANDARDS--------------------------------------------------
 intraplate_cvs_std <- intraplate_cvs %>%
@@ -220,36 +222,37 @@ intraplate_cvs_std <- intraplate_cvs %>%
 intraplate_cvs_std <- distinct(intraplate_cvs_std,
                                Sample,
                                .keep_all = TRUE) %>%
-  separate(col = Sample,
-           into = c("Sample", "Assay"),
-           sep = "_")
+  subset(select = -c(`Plate Name`))
 colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       "std",
                                       sep = "_")
 colnames(intraplate_cvs_std)[1] = "Standard"
 
+
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
-  filter(grepl("QC", intraplate_cvs$Sample))
-intraplate_cvs_qc$`Calc. Conc. CV` <- as.numeric(as.character(intraplate_cvs_qc$`Calc. Conc. CV`))
-intraplate_cvs_qc$`Calc. Conc. CV` <- mean(intraplate_cvs_qc$`Calc. Conc. CV`)
+  filter(grepl("QC", intraplate_cvs$Sample)) %>%
+  unite(Sample,
+        Sample, `Plate Name`,
+        sep = "_") %>%
+  group_by(Sample) %>%
+  mutate('Intraplate CV' = mean(as.numeric(`Calc. Conc. CV`))) %>%
+  ungroup
+
 intraplate_cvs_qc <- distinct(intraplate_cvs_qc,
                               Sample,
-                              .keep_all = TRUE) %>%
-  separate(col = Sample,
-           into = c("Sample", "Assay"),
-           sep = "_")
+                              .keep_all = TRUE)
 colnames(intraplate_cvs_qc) <- paste(colnames(intraplate_cvs_qc),
                                      "QC",
                                      sep = "_")
 colnames(intraplate_cvs_qc)[1] = "QC"
+
 
 intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample, 
                                   intraplate_cvs_std, 
                                   intraplate_cvs_qc)
 
 #--------------------------------------------------------------------------------------------------------------------
-Plots <- data.frame()
 README <- read_excel("ReadME_Template.xlsx")
 
 output <-  list(RawData = raw_data, 
@@ -258,7 +261,5 @@ output <-  list(RawData = raw_data,
                 WideSampleData = wide_sample,
                 LLODs = llod_group,
                 IntraplateCVs = intracvs_group,
-                Plots = Plots,
                 README = README) 
 }
-

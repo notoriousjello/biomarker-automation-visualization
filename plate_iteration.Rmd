@@ -2,7 +2,9 @@
 title: "Plate Iteration"
 author: "Jordan Lo"
 date: "2022-12-16"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 ------------------------------------------------------PACKAGE LOADING------------------------------------------------
 ```{r}
@@ -23,9 +25,10 @@ library("qpcR")
 ```{r}
 # reads the raw data excel file and stores it as a variable
 # FOR NEW USERS:
-#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw <- read_excel("CFA\\raw_data\\CF_US_KIM1_12222022_JL_Plates1-3.xlsx", 
-                       sheet = "RawData")
+#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE LOCATION OF THE RAW DATA EXCEL
+raw <- read_excel("CHROME//raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
+raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Below Fit Curve Range"] <- -99
+raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Above Fit Curve Range"] <- -89
 
 # reads in the automation script as a callable function
 source("./automation.R")
@@ -40,7 +43,18 @@ plate_dataframes <- lapply(split_plates, automation)
 # writes multiple excel files using the list of data frames above
 lapply(names(plate_dataframes),
        function(x) write_xlsx(plate_dataframes[[x]], 
-                              # CHANGE THIS TO THE ASSAYS RUN
-                              path = paste(x, "KIM1_PD.xlsx",
+                              # CHANGE THIS TO "STUDY_ASSAY_DATA_ANALYZED.xlsx
+                              path = paste(x, "CHR_Ang1Ang2_20230209_ANALYZED.xlsx",
                                            sep = "_")))
+```
+
+```{r}
+# This creates a single file of all the sets in the MSD Data rather than plate by plate
+raw <- read_excel("CHROME//raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
+
+source("./automation.R")
+total <- automation(raw)
+
+write_xlsx(total,
+           path = "CHR_Ang1Ang2_20230209_ALL_PLATES_ANALYZED.xlsx")
 ```

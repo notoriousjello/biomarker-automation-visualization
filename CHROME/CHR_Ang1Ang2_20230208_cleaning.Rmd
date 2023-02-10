@@ -1,0 +1,44 @@
+---
+title: "CHR_Ang1/2_20230208_cleaning"
+author: "Jordan Lo"
+date: "2023-02-09"
+output: html_document
+---
+
+```{r}
+# tidyverse allows us to do our data processing
+library("tidyverse")
+# readxl allows us to read excel files
+library("readxl")
+# writexl allows us to write to excel files
+library("writexl")
+# tidyr lets us reshape our long data into wide data
+library("tidyr")
+```
+
+```{r}
+# imports the raw data excel file
+raw <- read_excel("raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
+
+# separates out the raw data to append an identifier to PE samples
+raw_std <- raw %>%
+  filter(`Sample Group` == "Standards")
+raw_qc <- raw %>%
+  filter(`Sample Group` == "QC")
+raw_pe <- raw %>%
+  filter(`Sample Group` == "PE")
+raw_blanks <- raw %>%
+  filter(`Sample Group` == "Blanks") 
+
+# appends the identifier
+raw_pe$Sample <- paste(raw_pe$Sample, "V1",
+                       sep = "_")
+
+# binds the data back into a single data frame
+raw <- rbind(raw_std, raw_qc, raw_pe, raw_blanks)
+
+# writes the new raw data file to an excel
+write_xlsx(raw,
+           path = "raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
+```
+

@@ -24,8 +24,7 @@ library("qpcR")
 # reads the raw data excel file and stores it as a variable
 # FOR NEW USERS:
 #     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw_data <- read_excel("CFA\\raw_data\\CF_US_KIM1_12222022_JL_Plates1-3.xlsx", 
-                       sheet = "RawData")
+raw_data <- read_excel("CHROME//raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
 README <- read_excel("ReadME_Template.xlsx")
 
 # makes a list of all of the plates in the plate name column
@@ -35,7 +34,10 @@ print(biomarker_plates)
 
 # reads a specific plate from the raw data file
 raw_data <- raw_data %>%
-  filter(`Plate Name` == "Plate_25H3TA0209_Set1")
+  filter(`Plate Name` == "Plate_2BM80AE373_Set1") 
+
+raw_data$`Calc. Conc. Mean`[raw_data$`Detection Range` == "Below Fit Curve Range"] <- -89
+raw_data$`Calc. Conc. Mean`[raw_data$`Detection Range` == "Above Fit Curve Range"] <- -99
 ```
 
 -------------------------------------------------------LONG DATA-----------------------------------------------------
@@ -72,8 +74,7 @@ wide_data <- raw_data[,c("Sample",
   add_count(Sample)
 # removes the blank sample
 wide_data <- wide_data %>%
-  filter(Sample != "Blank") %>%
-  filter(Sample != "BLANK")
+  filter(`Sample Group` != "Blanks")
 ```
 
 
@@ -252,16 +253,17 @@ llod_group <- qpcR:::cbind.na(llod_sample,
 ```{r}
 # takes the Sample ID and Calc. Conc. CV from the long data set
 intraplate_cvs <-raw_data[,c("Sample",
+                             "Sample Group",
                               "Assay", 
-                              "Calc. Conc. CV")] %>%
+                              "Calc. Conc. CV",
+                              "Plate Name")] %>%
   unite(Sample,
         Sample:Assay,
         sep = "_")%>%
   add_count(Sample)
 
 intraplate_cvs <- intraplate_cvs %>%
-  filter(Sample != "Blank") %>%
-  filter(Sample != "BLANK")
+  filter(`Sample` != "Blanks")
 ```
 
 
@@ -273,7 +275,8 @@ intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
                            .keep_all = TRUE) %>%
   separate(col = Sample,
            into = c("Sample","Visit","Assay"),
-           sep = "_")
+           sep = "_") %>%
+  subset(select = -c(`Plate Name`))
 intraplate_cvs_sample$Sample <- as.numeric(as.character(intraplate_cvs_sample$Sample))
 intraplate_cvs_sample <- intraplate_cvs_sample %>%
   drop_na(Sample)
@@ -288,7 +291,8 @@ intraplate_cvs_std <- intraplate_cvs %>%
   filter(grepl("S", intraplate_cvs$Sample))
 intraplate_cvs_std <- distinct(intraplate_cvs_std,
                            Sample,
-                           .keep_all = TRUE)
+                           .keep_all = TRUE) %>%
+  subset(select = -c(`Plate Name`))
 colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       "std",
                                       sep = "_")
@@ -299,9 +303,14 @@ colnames(intraplate_cvs_std)[1] = "Standard"
 ```{r}
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
-  filter(grepl("QC", intraplate_cvs$Sample))
-intraplate_cvs_qc$`Calc. Conc. CV` <- as.numeric(as.character(intraplate_cvs_qc$`Calc. Conc. CV`))
-intraplate_cvs_qc$`Calc. Conc. CV` <- mean(intraplate_cvs_qc$`Calc. Conc. CV`)
+  filter(grepl("QC", intraplate_cvs$Sample)) %>%
+  unite(Sample,
+        Sample, `Plate Name`,
+        sep = "_") %>%
+  group_by(Sample) %>%
+  mutate('Intraplate CV' = mean(as.numeric(`Calc. Conc. CV`))) %>%
+  ungroup
+
 intraplate_cvs_qc <- distinct(intraplate_cvs_qc,
                            Sample,
                            .keep_all = TRUE)
@@ -320,8 +329,6 @@ intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample,
 
 -------------------------------------------------------EXCEL OUTPUT------------------------------------------------
 ```{r}
-Plots <- data.frame()
-
 # creates a new spreadsheet of the listed data frames
 write_xlsx(
   # sets the sheet names -- format is Sheet Name = DF Name
@@ -331,7 +338,6 @@ write_xlsx(
        WideSampleData = wide_sample,
        LLODs = llod_group,
        IntraplateCVs = intracvs_group,
-       Plots = Plots,
        README = README
        ),
   # sets the path where the excel will be saved

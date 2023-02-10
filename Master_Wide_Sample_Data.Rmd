@@ -1,0 +1,35 @@
+---
+title: "Master WideSampleData"
+author: "Jordan Lo"
+date: "2023-01-04"
+output: html_document
+---
+
+```{r}
+# Allows us to read in excel files 
+library(readxl)
+library(writexl)
+```
+
+```{r}
+Ang <- read_excel("CITRC//processed_data//Ang1Ang2_All_Plates_PD.xlsx",
+                  sheet = "WideSampleData")
+TNFR1 <- read_excel("CITRC//processed_data//sTNFR1_All_plates.xlsx",
+                    sheet = "WideSampleData")
+```
+
+```{r}
+master_sample_data <- merge(Ang, TNFR1, 
+                            by = "Sample", 
+                            all.y = TRUE)
+
+colnames(master_sample_data) <- paste("PE", colnames(master_sample_data), sep = "_")
+
+write_xlsx(
+  master_sample_data,
+  path = "CITRC//processed_data//CITRC_Sample_Data_Master_01042023.xlsx",
+  col_names = TRUE
+)
+```
+
+
