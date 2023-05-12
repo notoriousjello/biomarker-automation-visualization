@@ -1,0 +1,23 @@
+---
+title: "Wide_Data_Imputation"
+author: "Jordan Lo"
+date: "2023-03-24"
+output: html_document
+---
+
+```{r}
+# readxl allows us to read excel files
+library("readxl")
+# dplyr gives us data manipulation tools
+library("dplyr")
+```
+
+```{r}
+raw <- read_excel("CITRC\\raw_data\\All_Ang1Ang2_Data_Set1-11.xlsx")
+
+dr_avg <- raw %>%
+  group_by('Detection Range') %>%
+  mutate(avg = mean(`Calc. Concentration`))
+```
+
+

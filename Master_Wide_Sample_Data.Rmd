@@ -7,29 +7,50 @@ output: html_document
 
 ```{r}
 # Allows us to read in excel files 
-library(readxl)
-library(writexl)
+library("readxl")
+library("writexl")
 ```
 
 ```{r}
-Ang <- read_excel("CITRC//processed_data//Ang1Ang2_All_Plates_PD.xlsx",
+# CITRC STUDY
+# imports the citrc MSD data
+cit_Ang <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\Ang1Ang2\\CIT_Ang1Ang2_ALL_PLATES_ANALYZED.xlsx",
                   sheet = "WideSampleData")
-TNFR1 <- read_excel("CITRC//processed_data//sTNFR1_All_plates.xlsx",
+cit_TNFR1 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\TNFR-1\\CIT_TNFR1_ALL_PLATES_ANALYZED.xlsx",
                     sheet = "WideSampleData")
-```
 
-```{r}
-master_sample_data <- merge(Ang, TNFR1, 
+# merges the two dataframes using the sample column
+cit_master_sample_data <- merge(cit_Ang, cit_TNFR1, 
                             by = "Sample", 
-                            all.y = TRUE)
+                            all.y = TRUE,
+                            all.x = TRUE)
+# converts the columns to numeric and then rounds them
+cit_master_sample_data <- cit_master_sample_data %>%
+  mutate_if(is.character, as.numeric) %>%
+  mutate_if(is.numeric, round, digits = 5)
 
-colnames(master_sample_data) <- paste("PE", colnames(master_sample_data), sep = "_")
-
+# writes the dataframe to an excel document
 write_xlsx(
-  master_sample_data,
-  path = "CITRC//processed_data//CITRC_Sample_Data_Master_01042023.xlsx",
+  cit_master_sample_data,
+  path = "CITRC//processed_data//CITRC_Sample_Data_Master_03212023.xlsx",
   col_names = TRUE
 )
 ```
 
+```{r}
+# CHROME STUDY
+chr_ang <- read_excel("B:\\CHROME\\Plasma\\Ang1Ang2\\2023-02-08\\CHR_Ang1Ang2_20230209_ALL_PLATES_ANALYZED.xlsx",
+                      sheet = "WideSampleData")
+chr_srage <- read_excel("B:\\CHROME\\Plasma\\sRAGE\\2023-02-08\\CHR_sRAGE_20230213_ALL_PLATES_ANALYZED.xlsx",
+                        sheet = "WideSampleData")
+
+chr_master_sample_data <- merge(chr_ang, chr_srage,
+                                by = "Sample",
+                                all.x = TRUE,
+                                all.y = TRUE)
+chr_master_sample_data <- chr_master_sample_data %>%
+  mutate_if(is.character, as.numeric) %>%
+  mutate_if(is.numeric, round, digits = 5)
+
+```
 

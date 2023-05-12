@@ -26,7 +26,7 @@ library("qpcR")
 # reads the raw data excel file and stores it as a variable
 # FOR NEW USERS:
 #     CHANGE THE PATH IN THE read_excel FUNCTION TO THE LOCATION OF THE RAW DATA EXCEL
-raw <- read_excel("CHROME//raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
+raw <- read_excel("Incomplete_RAW.xlsx")
 raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Below Fit Curve Range"] <- -99
 raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Above Fit Curve Range"] <- -89
 
@@ -44,17 +44,15 @@ plate_dataframes <- lapply(split_plates, automation)
 lapply(names(plate_dataframes),
        function(x) write_xlsx(plate_dataframes[[x]], 
                               # CHANGE THIS TO "STUDY_ASSAY_DATA_ANALYZED.xlsx
-                              path = paste(x, "CHR_Ang1Ang2_20230209_ANALYZED.xlsx",
+                              path = paste(x, "CIT_sTREM1_ANALYZED.xlsx",
                                            sep = "_")))
 ```
 
 ```{r}
 # This creates a single file of all the sets in the MSD Data rather than plate by plate
-raw <- read_excel("CHROME//raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx")
-
 source("./automation.R")
 total <- automation(raw)
 
 write_xlsx(total,
-           path = "CHR_Ang1Ang2_20230209_ALL_PLATES_ANALYZED.xlsx")
+           path = "Incomplete_sTREM1_ANALYZED.xlsx")
 ```

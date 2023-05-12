@@ -105,7 +105,7 @@ colnames(wide_std) <- paste(colnames(wide_std),
 wide_qc <- long_data[,c("Sample",
                         "Assay",
                         "Calc. Conc. Mean")] %>%
-  filter(grepl("QC", long_data$Sample))
+  filter(grepl("QC", long_data$`Sample Group`))
 
 # converts the concentration column into a numeric value
 wide_qc$`Calc. Conc. Mean` <- as.numeric(as.character(wide_qc$`Calc. Conc. Mean`))
@@ -138,7 +138,8 @@ llod <- raw_data[,c("Sample",
                     "Signal",
                     "Assay",
                     "Calc. Concentration",
-                    "Detection Range")] %>%
+                    "Detection Range",
+                    "Sample Group")] %>%
   separate(col = Sample,
            into = c("Sample", "Visit"),
            sep = "_")
@@ -161,7 +162,7 @@ colnames(llod_std)[1] = "Standard"
 
 #---------------------------------------------------------LLOD QC----------------------------------------------------
 llod_qc <- llod %>%
-  filter(grepl("QC", llod$Sample))
+  filter(grepl("QC", llod$`Sample Group`))
 colnames(llod_qc) <- paste(colnames(llod_qc), 
                            "qc", 
                            sep = "_")
@@ -184,17 +185,16 @@ llod_group <- qpcR:::cbind.na(llod_sample,
                               llod_qc, 
                               llod_count)
 
-#------------------------------------------------------INTRAPLATE CVs------------------------------------------------
+#-------------------------------------------------------INTRAPLATE CVs-----------------------------------------------
 # takes the Sample ID and Calc. Conc. CV from the long data set
 intraplate_cvs <-raw_data[,c("Sample",
-                             "Sample Group",
-                             "Assay", 
+                             "Assay",
                              "Calc. Conc. CV",
+                             "Sample Group",
                              "Plate Name")] %>%
   unite(Sample,
         Sample:Assay,
-        sep = "_")%>%
-  add_count(Sample)
+        sep = "_")
 
 intraplate_cvs <- intraplate_cvs %>%
   filter(`Sample` != "Blanks")
@@ -205,10 +205,11 @@ intraplate_cvs_sample <- intraplate_cvs
 intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
                                   Sample,
                                   .keep_all = TRUE) %>%
+  add_count(Sample) %>%
   separate(col = Sample,
-           into = c("Sample","Visit","Assay"),
+           into = c("Sample","Visit", "Assay"),
            sep = "_") %>%
-  subset(select = -c(`Plate Name`))
+  subset(select = -c(`Plate Name`, `Sample Group`))
 intraplate_cvs_sample$Sample <- as.numeric(as.character(intraplate_cvs_sample$Sample))
 intraplate_cvs_sample <- intraplate_cvs_sample %>%
   drop_na(Sample)
@@ -218,11 +219,16 @@ intraplate_cvs_sample <- intraplate_cvs_sample[order(
 
 #---------------------------------------------------INTRA STANDARDS--------------------------------------------------
 intraplate_cvs_std <- intraplate_cvs %>%
-  filter(grepl("S", intraplate_cvs$Sample))
+  filter(grepl("S", intraplate_cvs$Sample)) %>%
+  unite(Sample,
+        Sample, `Plate Name`,
+        sep = "_") %>%
+  add_count(Sample)
 intraplate_cvs_std <- distinct(intraplate_cvs_std,
                                Sample,
                                .keep_all = TRUE) %>%
-  subset(select = -c(`Plate Name`))
+  subset(select = -c(`Sample Group`))
+
 colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       "std",
                                       sep = "_")
@@ -231,13 +237,12 @@ colnames(intraplate_cvs_std)[1] = "Standard"
 
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
-  filter(grepl("QC", intraplate_cvs$Sample)) %>%
+  filter(grepl("QC", intraplate_cvs$`Sample Group`)) %>%
   unite(Sample,
         Sample, `Plate Name`,
         sep = "_") %>%
-  group_by(Sample) %>%
-  mutate('Intraplate CV' = mean(as.numeric(`Calc. Conc. CV`))) %>%
-  ungroup
+  subset(select = -c(`Sample Group`)) %>%
+  add_count(Sample)
 
 intraplate_cvs_qc <- distinct(intraplate_cvs_qc,
                               Sample,
@@ -246,6 +251,7 @@ colnames(intraplate_cvs_qc) <- paste(colnames(intraplate_cvs_qc),
                                      "QC",
                                      sep = "_")
 colnames(intraplate_cvs_qc)[1] = "QC"
+
 
 
 intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample, 

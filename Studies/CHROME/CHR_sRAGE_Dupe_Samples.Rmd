@@ -1,0 +1,255 @@
+---
+title: "sRAGE Re-Run Samples"
+author: "Jordan Lo"
+date: "2023-02-13"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r, echo = FALSE}
+# tidyverse allows us to do our data processing
+library("tidyverse")
+# readxl allows us to read excel files
+library("readxl")
+# writexl allows us to write to excel files
+library("writexl")
+# tidyr lets us reshape our long data into wide data
+library("tidyr")
+# qpcR lets us merge data frames side by side
+library("qpcR")
+# stringr and magrittr lets us concatenate and separate strings
+library("stringr")
+library("magrittr")
+```
+
+```{r, echo = FALSE}
+# imports raw data from past sRAGE experiments 
+raw_old <- read_excel("raw_data//CHROME_Plasma_V1_sRAGE_data analysis_20201019.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+raw_old2 <- read_excel("raw_data//CHROME_Plasma_sRAGE_Data analysis_20200910.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+new <- read_excel ("raw_data//CHR_sRAGE_20230208_RAW.xlsx",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+
+# converts sample column into new snake format
+raw_old$Sample <- sub("CHR", "", raw_old$Sample)
+raw_old$Sample <- sub("V1", "_V1", raw_old$Sample)
+raw_old <- raw_old %>%
+  separate(col = Sample,
+           into = c("Sample", "Visit"),
+           sep = "_")
+raw_old$Sample <- as.numeric(raw_old$Sample)
+raw_old <- raw_old %>%
+  drop_na(Sample)
+
+raw_old2$Sample <- sub("CHR", "", raw_old2$Sample)
+raw_old2$Sample <- sub("V1", "_V1", raw_old2$Sample)
+raw_old2 <- raw_old2 %>%
+  # separates sample and visit into two columns
+  separate(col = Sample,
+           into = c("Sample", "Visit"),
+           sep = "_")
+raw_old2$Sample <- as.numeric(raw_old2$Sample)
+# removes all non sample values
+raw_old2 <- raw_old2 %>%
+  drop_na(Sample)
+
+# binds the two old raw columns into one data frame
+old <- rbind(raw_old, raw_old2)
+old$status <- "old"
+
+
+new <- new %>%
+  separate(col = Sample,
+           into = c("Sample", "Visit"),
+           sep = "_")
+new$Sample <- as.numeric(new$Sample)
+new <- new %>%
+  drop_na(Sample)
+new$status <- "new"
+
+merged <- as.list(intersect(old$Sample,
+                    new$Sample))
+
+merged_df_srage <- merge(old, new, all.y = TRUE, all.x = TRUE)
+
+merged_df_srage <- merged_df_srage %>%
+  filter(Sample %in% merged)
+
+merged_df_srage <- merged_df_srage[,c("Plate Name",
+                          "Sample",
+                          "Visit",
+                          "Assay",
+                          "status",
+                          "Calc. Conc. Mean")]
+```
+
+```{r, echo = FALSE}
+# imports raw data from past sRAGE experiments 
+raw_old <- read_excel("raw_data//CHROME_Plasma_V1_sRAGE_data analysis_20201019.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+raw_old2 <- read_excel("raw_data//CHROME_Plasma_sRAGE_Data analysis_20200910.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+new <- read_excel ("raw_data//CHR_sRAGE_20230208_RAW.xlsx",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+# merges the dataframes
+merge <- rbind(raw_old, raw_old2)
+merge <- merge(merge, new, all.y = TRUE, all.x =  TRUE)
+
+# converts a column into numeric and log transforms it
+merge$`Calc. Conc. Mean` <- as.numeric(merge$`Calc. Conc. Mean`)
+merge <- merge %>%
+  mutate(log_calc_conc_mean = log(`Calc. Conc. Mean`))
+
+# renames plates
+plate_names <- unique(merge$`Plate Name`)
+plate_num <- c("Plate 1 (New)", 
+               "Plate 2 (New)", 
+               "Plate 3 (Old)", 
+               "Plate 4 (Old)", 
+               "Plate 5 (Old)", 
+               "Plate 6 (Old)")
+map <- setNames(plate_num,
+                plate_names)
+merge$`Plate Name` <- map[merge$`Plate Name`]
+
+# creates ggplot object
+srage <- ggplot(data = merge,
+                mapping = aes(x = `Plate Name`,
+                              y = `log_calc_conc_mean`)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "",
+       y = "log10 Calc. Conc. Mean",
+       title = "sRAGE Plates") + 
+  coord_cartesian(ylim = c(3, 12)) +
+  theme_classic()
+
+srage
+```
+
+
+```{r, echo = FALSE}
+# imports raw data from past Ang-1/Ang-2 experiments 
+raw_old <- read_excel("raw_data//CHROME_Plasma_Ang1Ang2_Run1_data analysis_20200729.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+raw_old2 <- read_excel("raw_data//CHROME_Plasma_Ang1Ang2_Run2_data analysis_20200910.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+raw_old3 <- read_excel("raw_data//CHROME_Plasma_V1_Ang1Ang2__data analysis_20201009.xlsx",
+                       sheet = "RawData")
+
+new <- read_excel ("raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+
+# binds the old data together and performs data transformations on them
+old <- rbind(raw_old2, raw_old, raw_old3)
+old$status <- "old"
+# removes the study prefix and adds a new visit column using string separation
+old$Sample <- sub("CHR", "", old$Sample)
+old$Sample <- sub("V1", "_V1", old$Sample)
+old <- old %>%
+  separate(Sample,
+           into = c("Sample", "Visit"),
+           sep = "_")
+# removes non-sample and and non-V1 data
+old$Sample <- as.numeric(old$Sample)
+old <- old %>%
+  drop_na(Sample)
+
+# separates the sample column into ID and visit
+new <- new %>%
+  separate(col = Sample,
+           into = c("Sample", "Visit"),
+           sep = "_")
+# removes the non samples and generates a new column listing a sample's status
+new$Sample <- as.numeric(new$Sample)
+new <- new %>%
+  drop_na(Sample)
+new$status <- "new"
+
+merged <- as.list(intersect(old$Sample,
+                    new$Sample))
+
+merged_df_ang <- merge(old, new, all.y = TRUE, all.x = TRUE)
+
+merged_df_ang <- merged_df_ang %>%
+  filter(Sample %in% merged)
+
+merged_df_ang <- merged_df_ang[,c("Plate Name",
+                          "Sample",
+                          "Visit",
+                          "Assay",
+                          "status",
+                          "Calc. Conc. Mean")]
+```
+
+```{r, echo = FALSE, warnin}
+# imports raw data from past Ang-1/Ang-2 experiments 
+raw_old <- read_excel("raw_data//CHROME_Plasma_Ang1Ang2_Run1_data analysis_20200729.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+raw_old2 <- read_excel("raw_data//CHROME_Plasma_Ang1Ang2_Run2_data analysis_20200910.xlsx",
+                      sheet = "RawData",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+raw_old3 <- read_excel("raw_data//CHROME_Plasma_V1_Ang1Ang2__data analysis_20201009.xlsx",
+                       sheet = "RawData")
+
+new <- read_excel ("raw_data//CHR_Ang1Ang2_02_08_23_RAW.xlsx",
+                      .name_repair = "minimal",
+                      col_names = TRUE)
+# merges the dataframes
+merge <- rbind(raw_old, raw_old2, raw_old3)
+merge <- merge(merge, new, all.y = TRUE, all.x =  TRUE)
+
+# converts a column into numeric and log transforms it
+merge$`Calc. Conc. Mean` <- as.numeric(merge$`Calc. Conc. Mean`)
+merge <- merge %>%
+  mutate(log_calc_conc_mean = log(`Calc. Conc. Mean`))
+
+# renames plates
+plate_names <- unique(merge$`Plate Name`)
+plate_names
+plate_num <- c("P3 (Old)", 
+               "P1 (New)", 
+               "P2 (New)", 
+               "P4 (Old)", 
+               "P5 (Old)", 
+               "P6 (Old)", 
+               "P7 (Old)", 
+               "P8 (Old)", 
+               "P9 (Old)")
+map <- setNames(plate_num,
+                plate_names)
+merge$`Plate Name` <- map[merge$`Plate Name`]
+
+# creates ggplot object
+ang <- ggplot(data = merge,
+                mapping = aes(x = `Plate Name`,
+                              y = `log_calc_conc_mean`)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "",
+       y = "log10 Calc. Conc. Mean",
+       title = "Ang-1/Ang-2 Plates") + 
+  coord_cartesian(ylim = c(4, 12)) +
+  theme_classic()
+
+ang
+```
+
