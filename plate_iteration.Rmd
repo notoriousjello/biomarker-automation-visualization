@@ -20,39 +20,42 @@ library("tidyr")
 library("qpcR")
 ```
 
-
 ------------------------------------------------------FUNCTION CALLS--------------------------------------------------
 ```{r}
-# reads the raw data excel file and stores it as a variable
-# FOR NEW USERS:
-#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE LOCATION OF THE RAW DATA EXCEL
-raw <- read_excel("Incomplete_RAW.xlsx")
-raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Below Fit Curve Range"] <- -99
-raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Above Fit Curve Range"] <- -89
-
-# reads in the automation script as a callable function
-source("./automation.R")
-
-# splits the raw data into separate plate based data frames
-split_plates <- split(raw ,
-                      raw$`Plate Name`)
-
-# applies the automation function to the various split plates
-plate_dataframes <- lapply(split_plates, automation)
-
-# writes multiple excel files using the list of data frames above
-lapply(names(plate_dataframes),
-       function(x) write_xlsx(plate_dataframes[[x]], 
-                              # CHANGE THIS TO "STUDY_ASSAY_DATA_ANALYZED.xlsx
-                              path = paste(x, "CIT_sTREM1_ANALYZED.xlsx",
-                                           sep = "_")))
+# # reads the raw data excel file and stores it as a variable
+# # FOR NEW USERS:
+# #     CHANGE THE PATH IN THE read_excel FUNCTION TO THE LOCATION OF THE RAW DATA EXCEL
+# raw <- read_xlsx("")
+# raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Below Fit Curve Range"] <- -99
+# raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Above Fit Curve Range"] <- -89
+# 
+# # reads in the automation script as a callable function
+# source("./automation.R")
+# 
+# # splits the raw data into separate plate based data frames
+# split_plates <- split(raw ,
+#                       raw$`Plate Name`)
+# 
+# # applies the automation function to the various split plates
+# plate_dataframes <- lapply(split_plates, automation)
+# 
+# # writes multiple excel files using the list of data frames above
+# lapply(names(plate_dataframes),
+#        function(x) write_xlsx(plate_dataframes[[x]],
+#                               # CHANGE THIS TO "STUDY_ASSAY_DATA_ANALYZED.xlsx
+#                               path = paste(x, "",
+#                                            sep = "_")))
 ```
 
 ```{r}
+raw <- read_xlsx("B:\\KRI\\ICICLE\\EGF\\2023_05_23\\ICI_EGF_20230525_RAW.xlsx")
+raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Below Fit Curve Range"] <- -99
+raw$`Calc. Conc. Mean`[raw$`Detection Range` == "Above Fit Curve Range"] <- -89
+
 # This creates a single file of all the sets in the MSD Data rather than plate by plate
-source("./automation.R")
-total <- automation(raw)
+source("./automation_KRI.R")
+total <- automation_KRI(raw)
 
 write_xlsx(total,
-           path = "Incomplete_sTREM1_ANALYZED.xlsx")
+           path = "B:\\KRI\\ICICLE\\EGF\\2023_05_23\\ICI_EGF_20230525_ANALYZED.xlsx")
 ```

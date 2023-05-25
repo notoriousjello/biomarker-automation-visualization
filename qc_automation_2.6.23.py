@@ -173,56 +173,56 @@ def wide_msd(raw_data):
     return wide, wide_imputed, llods
 
 
-def read_me(readme, file_path):
-    file_path = file_path[:-1]
-    readme = readme[readme.iloc[:, 1] == file_path]
-    readme = readme.tail(1)
-    readme = readme.T.reset_index().rename(columns={'index': 'Parameter', 1: 'Field'})
-    readme = readme.dropna()
-    readme['Parameter'] = readme['Parameter'].str.split('.').str[0]
-    # add section header and move to top
-    readme.loc[-1] = ['Identification of assay, plates, and operators', '']
-    readme.index = readme.index + 1
-    readme = readme.sort_index()
-    readme.loc[len(readme.index)] = ['', '']
-    dict = {
-        'Parameter': ['Tabs', 'LongData', 'WideData', 'WideDataImputed', 'QC Summary', 'Plate QC', '', 'Definitions',
-                      'Below Fit Curve Range', 'Below Detection Range',
-                      'Above Fit Curve Range', 'Above Detection Range', 'Intraplate CV', '',
-                      'Key for missingness and out of range values', 'missing (not measured)', 'Below Fit Curve Range',
-                      'Above Fit Curve Range', '', 'Report Generation', 'Prepared by'],
-        'Field': ['', 'Sample MSD values',
-                  'Pivoted data with columns in assay_sample_visit format (see key below for out of range and missing values)',
-                  'Imputed version of WideData, LLOD = lowest sample concentration / 2',
-                  'QC summary information for each assay', 'QC summary information for each plate',
-                  '', '', 'Signal is below the bottom of the bottom of the curve fit. No concentration is given.',
-                  'Signal is above the bottom of the curve, but below the detection limit as defined by the Detection Limit Properties',
-                  'Signal is within 110%\ of S001 signal when dose curve is in the linear range or within 110% of the dose curve plateau. NaN occurs when signals are way above 110% of S001 and/or when camera is saturated (>1,500,000 RU).',
-                  'Signal is above the top of detection range as defined by the Detection Limit Properties',
-                  '100*std/mean of QC well concentrations', '', '', 'NA', '-99', '-89', '', '', 'Hana Morris, Ted Liu']
-    }
-    to_add = pd.DataFrame(dict)
-    readme = pd.concat([readme, to_add], ignore_index=True)
-    readme.reset_index()
-    today = date.today()
-    date_string = today.strftime('%m.%d.%y')
-    # readme.loc[len(readme.index)]  = ['Prepared on', date_string]
-    return readme
+# def read_me(readme, file_path):
+#     file_path = file_path[:-1]
+#     readme = readme[readme.iloc[:, 1] == file_path]
+#     readme = readme.tail(1)
+#     readme = readme.T.reset_index().rename(columns={'index': 'Parameter', 1: 'Field'})
+#     readme = readme.dropna()
+#     readme['Parameter'] = readme['Parameter'].str.split('.').str[0]
+#     # add section header and move to top
+#     readme.loc[-1] = ['Identification of assay, plates, and operators', '']
+#     readme.index = readme.index + 1
+#     readme = readme.sort_index()
+#     readme.loc[len(readme.index)] = ['', '']
+#     dict = {
+#         'Parameter': ['Tabs', 'LongData', 'WideData', 'WideDataImputed', 'QC Summary', 'Plate QC', '', 'Definitions',
+#                       'Below Fit Curve Range', 'Below Detection Range',
+#                       'Above Fit Curve Range', 'Above Detection Range', 'Intraplate CV', '',
+#                       'Key for missingness and out of range values', 'missing (not measured)', 'Below Fit Curve Range',
+#                       'Above Fit Curve Range', '', 'Report Generation', 'Prepared by'],
+#         'Field': ['', 'Sample MSD values',
+#                   'Pivoted data with columns in assay_sample_visit format (see key below for out of range and missing values)',
+#                   'Imputed version of WideData, LLOD = lowest sample concentration / 2',
+#                   'QC summary information for each assay', 'QC summary information for each plate',
+#                   '', '', 'Signal is below the bottom of the bottom of the curve fit. No concentration is given.',
+#                   'Signal is above the bottom of the curve, but below the detection limit as defined by the Detection Limit Properties',
+#                   'Signal is within 110%\ of S001 signal when dose curve is in the linear range or within 110% of the dose curve plateau. NaN occurs when signals are way above 110% of S001 and/or when camera is saturated (>1,500,000 RU).',
+#                   'Signal is above the top of detection range as defined by the Detection Limit Properties',
+#                   '100*std/mean of QC well concentrations', '', '', 'NA', '-99', '-89', '', '', 'Hana Morris, Ted Liu']
+#     }
+#     to_add = pd.DataFrame(dict)
+#     readme = pd.concat([readme, to_add], ignore_index=True)
+#     readme.reset_index()
+#     today = date.today()
+#     date_string = today.strftime('%m.%d.%y')
+#     # readme.loc[len(readme.index)]  = ['Prepared on', date_string]
+#     return readme
 
 
-def compile_all(path_to_readme, folder):
+def compile_all(folder):
     # index = 0
-    readme_excel = pd.read_csv(path_to_readme)
-    print(readme_excel)
+    #readme_excel = pd.read_csv(path_to_readme)
+    #print(readme_excel)
     # file_path = readme_excel[
     #     readme_excel['File path to folder with raw data, graphs, protocol'].str.contains(folder)]
 
     # Need to use iloc due to new col header changes.
-    file_path = readme_excel[readme_excel.iloc[:, 1].str.contains(folder, na=False)]
-    print(file_path)
-    file_path = file_path.iloc[-1, 1]
-    file_path += '\\'
-    temp_path = file_path
+    #file_path = readme_excel[readme_excel.iloc[:, 1].str.contains(folder, na=False)]
+    #print(file_path)
+    #file_path = file_path.iloc[-1, 1]
+    #file_path += '\\'
+    file_path = folder
 
     print(file_path)
     # per_panel_qc(file_path)
@@ -257,17 +257,17 @@ def compile_all(path_to_readme, folder):
     qc_panel.to_excel(writer, sheet_name='Plate QC', na_rep='NA', index=False)
     qc_all = qc_summary(qc_panel, llods)
     qc_all.to_excel(writer, sheet_name='QC summary', na_rep='NA', index=False)
-    readme = read_me(readme_excel, temp_path)
-    readme.to_excel(writer, sheet_name='ReadMe', na_rep='NA', index=False)
+    # readme = read_me(readme_excel, temp_path)
+    # readme.to_excel(writer, sheet_name='ReadMe', na_rep='NA', index=False)
     writer.close()
 
 
 def main():
     # linked to google forms spreadsheet
-    readme_url = 'https://docs.google.com/spreadsheets/d/1nLa51D0_87Ta4o8WdcRH0S1P0u43IxF7O-0ZlIFB6uE/edit#gid=434516371'
-    url_1 = readme_url.replace('/edit#gid=', '/export?format=csv&gid=')
-    msd_folder = 'B:\CITRC\Plasma Biomarker August 2022\Ang1Ang2'
-    compile_all(url_1, msd_folder)
+    #readme_url = 'https://docs.google.com/spreadsheets/d/1nLa51D0_87Ta4o8WdcRH0S1P0u43IxF7O-0ZlIFB6uE/edit#gid=434516371'
+    #url_1 = readme_url.replace('/edit#gid=', '/export?format=csv&gid=')
+    msd_folder = 'C:\\Users\\notjello\\Documents\\GitHub\\biomarker-automation-visualization\\Studies\\KRI\\ICICLE\\EGF\\'
+    compile_all(msd_folder)
 
 
 
