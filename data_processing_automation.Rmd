@@ -24,9 +24,12 @@ library("qpcR")
 # reads the raw data excel file and stores it as a variable
 # FOR NEW USERS:
 #     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw_data <- read_excel("B:\\KRI\\ICICLE\\EGF\\2023_05_23\\ICI_EGF_20230525_RAW.xlsx")
+raw_data <- read_excel("test\\CHR_sRAGE_20230208_RAW.xlsx")
 README <- read_excel("ReadME_Template.xlsx")
 raw_data$`Calc. Conc. Mean` <- as.numeric(raw_data$`Calc. Conc. Mean`)
+raw_data$`Calc. Concentration` <- as.numeric(raw_data$`Calc. Concentration`)
+raw_data$CV <- as.numeric(raw_data$CV)
+raw_data$`Calc. Conc. CV` <- as.numeric(raw_data$`Calc. Conc. CV`)
 
 # makes a list of all of the plates in the plate name column
 # biomarker_plates <- as.list(unique(
@@ -39,42 +42,74 @@ raw_data$`Calc. Conc. Mean` <- as.numeric(raw_data$`Calc. Conc. Mean`)
 
 raw_data$`Calc. Conc. Mean`[raw_data$`Detection Range` == "Below Fit Curve Range"] <- -89
 raw_data$`Calc. Conc. Mean`[raw_data$`Detection Range` == "Above Fit Curve Range"] <- -99
+
+raw_data$`Calc. Concentration`[raw_data$`Detection Range` == "Below Fit Curve Range"] <- -89
+raw_data$`Calc. Concentration`[raw_data$`Detection Range` == "Above Fit Curve Range"] <- -99
 ```
 
+-------------------------------------------------------LONG DATA-----------------------------------------------------
 ```{r}
-#-------------------------------------------------------LONG DATA-----------------------------------------------------
+# stores a subset of columns from raw_data as long_data
+long_data <- raw_data[,c("Plate Name",
+                         "Sample",
+                         "Sample Group",
+                         "Assay",
+                         "Dilution",
+                         "Concentration",
+                         "% Recovery Mean",
+                         "Calc. Concentration",
+                         "Calc. Conc. Mean",
+                         "Calc. Conc. CV",
+                         "Detection Range",
+                         "Detection Limits: Calc. High",
+                         "Detection Limits: Calc. Low")]
 
-  # stores a subset of columns from raw_data as long_data
-  long_data <- raw_data[,c("Plate Name",
-                           "Sample",
-                           "Sample Group",
-                           "Assay",
-                           "Dilution",
-                           "Concentration",
-                           "% Recovery Mean",
-                           "Calc. Concentration",
-                           "Calc. Conc. Mean",
-                           "Calc. Conc. CV",
-                           "Detection Range",
-                           "Detection Limits: Calc. High",
-                           "Detection Limits: Calc. Low")]
-  
-  # separates the sample column into visit and sample number
-  long_data <- long_data %>% 
-    separate(col = Sample,
-             into = c("Study","Sample", "Visit"),
-             sep = "_")
+# separates the sample column into visit and sample number
+long_sample <- long_data %>% 
+  filter(`Sample Group` %in% c("PE", "URN")) %>%
+  separate(col = Sample,
+           into = c("Study","Sample", "Visit"),
+           sep = "_")
 
+long_non_sample <- long_data %>%
+  filter(`Sample Group` %in% c("Standards", "QC", "Blank"))
+
+long_data <- bind_rows(long_sample, long_non_sample)
+
+# long_data <- function(raw_data) {
+#   # stores a subset of columns from raw_data as long_data
+#   long_data <- raw_data[,c("Plate Name",
+#                            "Sample",
+#                            "Sample Group",
+#                            "Assay",
+#                            "Dilution",
+#                            "Concentration",
+#                            "% Recovery Mean",
+#                            "Calc. Concentration",
+#                            "Calc. Conc. Mean",
+#                            "Calc. Conc. CV",
+#                            "Detection Range",
+#                            "Detection Limits: Calc. High",
+#                            "Detection Limits: Calc. Low")]
+#   
+#   # separates the sample column into visit and sample number
+#   long_data <- long_data %>% 
+#     separate(col = Sample,
+#              into = c("Study","Sample", "Visit"),
+#              sep = "_")
+#   return(long_data)
+# }
 ```
 
+-------------------------------------------------------WIDE DATA-----------------------------------------------------
 ```{r}
-#-------------------------------------------------------WIDE DATA-----------------------------------------------------
-# selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
+# subsets raw data into a new dataframe 
 wide_data <- raw_data[,c("Sample",
                          "Assay",
                          "Sample Group",
                          "Calc. Conc. Mean")]
-# removes the blank sample
+
+# removes the blank sample and creates a dataframe with just Samples
 wide_data_sample <- wide_data %>%
   filter(`Sample Group` != "Blanks") %>%
   separate(col = Sample,
@@ -82,11 +117,10 @@ wide_data_sample <- wide_data %>%
            sep = "_") %>%
   filter(`Sample` != "NA")
 
-
 #----------------------------------------------------WIDE SAMPLES----------------------------------------------------
 # creates the initial dataframe
 wide_sample <- wide_data_sample %>%
-  # concatenates columns in order to find and filter for unique observations and then separates into three new columns
+  # concatenates columns in order to find and filter for unique observations and then separates into new columns
   unite("Sample",
         Study:Assay,
         sep = "_") %>%
@@ -106,6 +140,12 @@ wide_sample <- wide_sample %>%
 # orders the column by sample
 wide_sample <- wide_sample[order(
   wide_sample$Sample),]
+
+# concatenates study and sample columns
+wide_sample <- wide_sample %>%
+  unite("Sample",
+        Study:Sample,
+        sep = "_")
 
 # pivots the long format of the original data into a wide format
 wide_sample <- wide_sample %>%
@@ -164,6 +204,7 @@ wide_qc <- wide_qc %>%
   pivot_wider(names_from = Assay,
               values_from = `Calc. Conc. Mean`)
 
+# adds a separator denoting the type of sample this is (sample/QC/Standard)
 colnames(wide_qc) <- paste(colnames(wide_qc),
                             "qc",
                             sep = "_")
@@ -172,55 +213,70 @@ colnames(wide_qc) <- paste(colnames(wide_qc),
 wide_data_group <- qpcR:::cbind.na(wide_sample, wide_std, wide_qc)
 ```
 
+----------------------------------------------------LLOD------------------------------------------------------------
 ```{r}
-#----------------------------------------------------LLOD------------------------------------------------------------
-# creates a new data frame looking at lowest limit of detection (LLOD)
+# subsets raw data to create a new data frame
 llod <- raw_data[,c("Sample",
                     "Well",
                     "Signal",
                     "Assay",
                     "Calc. Concentration",
                     "Detection Range",
-                    "Sample Group")]
+                    "Sample Group",
+                    "Plate Name")]
+
 #----------------------------------------------------LLOD SAMPLES----------------------------------------------------
+# subsets llod into just samples and then separates the column into three new columns
 llod_sample <- llod %>%
       separate(col = Sample,
            into = c("Study","Sample", "Visit"),
            sep = "_")
+
+# REWRITE THIS TO BE SIMPLER
 llod_sample$Sample <- as.numeric(as.character(llod_sample$Sample))
 llod_sample <- llod_sample %>%
   drop_na(Sample) %>%
   filter(`Detection Range` != "In Detection Range")
+
+# orders the data by sample
 llod_sample <- llod_sample[order(
   llod_sample$Sample),] 
 
 #--------------------------------------------------------LLOD STANDARDS----------------------------------------------
+# subsets llod into just standards and filters the data to just the ones not in detection range
 llod_std <- llod %>%
   filter(`Sample Group` == "Standards") %>%
   filter(`Detection Range` != "In Detection Range")
+# adds a separator denoting the type of sample this is (sample/QC/Standard)
 colnames(llod_std) <- paste(colnames(llod_std), 
                             "std", 
                             sep = "_")
 colnames(llod_std)[1] = "Standard"
 
 #---------------------------------------------------------LLOD QC----------------------------------------------------
+# subsets the data to just include QCs
 llod_qc <- llod %>%
   filter(grepl("QC", llod$`Sample Group`))
+
+# adds a separator denoting the type of sample this is (sample/QC/Standard)
 colnames(llod_qc) <- paste(colnames(llod_qc), 
                            "qc", 
                            sep = "_")
+
+# renames a column
 colnames(llod_qc)[1] = "QC"
 
 #---------------------------------------------------------LLOD COUNT-------------------------------------------------
 # creates a data frame that tallies the number of samples with a detection range at or below the detection/fit curve
 llod_count <- llod %>%
+  filter(!`Sample Group` %in% c("Standards", "QC", "Blanks")) %>%
   group_by(`Detection Range`) %>%
   tally()
 
-# converts the long data into wide format
-llod_count <- pivot_wider(llod_count,
-                          names_from = `Detection Range`,
-                          values_from = `n`)
+# # converts the long data into wide format
+# llod_count <- pivot_wider(llod_count,
+#                           names_from = `Detection Range`,
+#                           values_from = `n`)
 
 # merges the various llod dataframes side by side
 llod_group <- qpcR:::cbind.na(llod_sample, 
@@ -229,32 +285,30 @@ llod_group <- qpcR:::cbind.na(llod_sample,
                               llod_count)
 ```
 
-
+-------------------------------------------------------INTRAPLATE CVs-----------------------------------------------
 ```{r}
-#-------------------------------------------------------INTRAPLATE CVs-----------------------------------------------
-# takes the Sample ID and Calc. Conc. CV from the long data set
-intraplate_cvs <-raw_data[,c("Sample",
-                             "Assay",
-                             "Calc. Conc. CV",
-                             "Sample Group",
-                             "Plate Name")] %>%
+# subsets raw data to create a new data frame that then concatenates Sample and Assay
+intraplate_cvs <- raw_data[,c("Sample",
+                              "Assay",
+                              "Calc. Conc. CV",
+                              "Sample Group",
+                              "Plate Name")]  %>%
+  unite(Sample,
+        Sample:Assay,
+        sep = "_") %>%
   add_count(Sample)
 
+# filters out the blanks
 intraplate_cvs <- intraplate_cvs %>%
   filter(`Sample` != "Blanks")
 
 #---------------------------------------------------INTRA SAMPLES----------------------------------------------------
-intraplate_cvs_sample <- intraplate_cvs %>%
-  unite(Sample,
-        Sample:Assay,
-        sep = "_")
-intraplate_cvs_sample <- distinct(intraplate_cvs_sample,
+intraplate_cvs_sample <- distinct(intraplate_cvs,
                                   `Sample`,
                                   .keep_all = TRUE) %>%
   separate(col = `Sample`,
            into = c("Study","Sample", "Visit", "Assay"),
            sep = "_")
-  #subset(select = -c(`Plate Name`, `Sample Group`))
 intraplate_cvs_sample$Sample <- as.numeric(as.character(intraplate_cvs_sample$Sample))
 intraplate_cvs_sample <- intraplate_cvs_sample %>%
   drop_na(Sample)
@@ -277,7 +331,6 @@ colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       sep = "_")
 colnames(intraplate_cvs_std)[1] = "Standard"
 
-
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
   filter(grepl("QC", intraplate_cvs$`Sample Group`)) %>%
@@ -287,23 +340,20 @@ intraplate_cvs_qc <- intraplate_cvs %>%
   subset(select = -c(`Sample Group`))
 
 intraplate_cvs_qc <- distinct(intraplate_cvs_qc,
-                              Sample,
+                              Sample, 
                               .keep_all = TRUE)
 colnames(intraplate_cvs_qc) <- paste(colnames(intraplate_cvs_qc),
                                      "QC",
                                      sep = "_")
 colnames(intraplate_cvs_qc)[1] = "QC"
 
-
-
 intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample, 
                                   intraplate_cvs_std, 
                                   intraplate_cvs_qc)
 ```
 
-
+-------------------------------------------------------README------------------------------------------------------
 ```{r}
-#--------------------------------------------------------------------------------------------------------------------
 README <- read_excel("ReadME_Template.xlsx")
 
 output <-  list(RawData = raw_data, 
@@ -313,4 +363,7 @@ output <-  list(RawData = raw_data,
                 LLODs = llod_group,
                 IntraplateCVs = intracvs_group,
                 README = README)
+
+write_xlsx(output, 
+           path = "test.xlsx")
 ```

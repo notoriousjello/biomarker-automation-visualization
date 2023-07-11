@@ -84,5 +84,3 @@ ggsave(file = "visualizations\\TNFR-1_Batch_Effect.png",  # file output location
        width = 10)
 ```
 
-
-

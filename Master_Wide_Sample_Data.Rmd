@@ -9,48 +9,77 @@ output: html_document
 # Allows us to read in excel files 
 library("readxl")
 library("writexl")
+# tidyverse used for data manipulation
+library("tidyverse")
 ```
 
 ```{r}
 # CITRC STUDY
 # imports the citrc MSD data
-cit_Ang <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\Ang1Ang2\\CIT_Ang1Ang2_ALL_PLATES_ANALYZED.xlsx",
+cit_Ang <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\Ang1Ang2\\CIT_PE_Ang1Ang2_20230320_ANALYZED.xlsx",
                   sheet = "WideSampleData")
-cit_TNFR1 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\TNFR-1\\CIT_TNFR1_ALL_PLATES_ANALYZED.xlsx",
+cit_sTREM1 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\sTREM1\\2023_04_04\\CIT_sTREM1_20230515_ANALYZED_STD_CURVE_ADJUSTED.xlsx",
                     sheet = "WideSampleData")
-
-# merges the two dataframes using the sample column
-cit_master_sample_data <- merge(cit_Ang, cit_TNFR1, 
-                            by = "Sample", 
-                            all.y = TRUE,
-                            all.x = TRUE)
-# converts the columns to numeric and then rounds them
-cit_master_sample_data <- cit_master_sample_data %>%
-  mutate_if(is.character, as.numeric) %>%
-  mutate_if(is.numeric, round, digits = 5)
-
-# writes the dataframe to an excel document
-write_xlsx(
-  cit_master_sample_data,
-  path = "CITRC//processed_data//CITRC_Sample_Data_Master_03212023.xlsx",
-  col_names = TRUE
-)
+cit_TNFR1 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\TNFR-1\\2022_10_RPLEX\\CIT_RPLEX_TNFR1_20221010_ANALYZED.xlsx",
+                        sheet = "WideSampleData")
+cit_ANGPTL4 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\AngPTL4\\2023_03_30\\AngPTL4_All_Plates_Data.xlsx",
+                          sheet = "WideSampleData")
+cit_FAS <- read_excel("C:\\Users\\notjello\\Downloads\\Fas.Data.Citrc.xls")
 ```
 
 ```{r}
-# CHROME STUDY
-chr_ang <- read_excel("B:\\CHROME\\Plasma\\Ang1Ang2\\2023-02-08\\CHR_Ang1Ang2_20230209_ALL_PLATES_ANALYZED.xlsx",
-                      sheet = "WideSampleData")
-chr_srage <- read_excel("B:\\CHROME\\Plasma\\sRAGE\\2023-02-08\\CHR_sRAGE_20230213_ALL_PLATES_ANALYZED.xlsx",
-                        sheet = "WideSampleData")
+# updating column names to snake script
+colnames(cit_FAS) <- c("Sample", 
+                       "Subject_Code", 
+                       "PE_sFas_V1", 
+                       "URN_sFas_V1",
+                       "PE_FasL_V1",
+                       "URN_FasL_V1", 
+                       "PE_sFas_V2", 
+                       "URN_sFas_V2", 
+                       "PE_FasL_V2", 
+                       "URN_FasL_V2") 
+cit_FAS$Sample <- paste0("CIT_", cit_FAS$Sample)
 
-chr_master_sample_data <- merge(chr_ang, chr_srage,
-                                by = "Sample",
-                                all.x = TRUE,
-                                all.y = TRUE)
-chr_master_sample_data <- chr_master_sample_data %>%
-  mutate_if(is.character, as.numeric) %>%
-  mutate_if(is.numeric, round, digits = 5)
-
+cit_FAS_reorder <- cit_FAS[, c(1, 2, 3, 7, 4, 8, 5, 9, 6, 10)]
 ```
 
+
+```{r}
+# merges the two dataframes using the sample column
+cit_master_sample_data <- merge(cit_Ang, cit_sTREM1, 
+                            by = "Sample", 
+                            all.y = TRUE,
+                            all.x = TRUE)
+
+cit_master_sample_data <- merge(cit_master_sample_data, cit_TNFR1, 
+                            by = "Sample", 
+                            all.y = TRUE,
+                            all.x = TRUE)
+
+cit_master_sample_data <- merge(cit_master_sample_data, cit_ANGPTL4, 
+                            by = "Sample", 
+                            all.y = TRUE,
+                            all.x = TRUE)
+
+cit_master_sample_data <- merge(cit_master_sample_data, cit_FAS_reorder, 
+                            by = "Sample", 
+                            all.y = TRUE,
+                            all.x = TRUE)
+
+# rounds numeric columns
+cit_master_sample_data <- cit_master_sample_data %>%
+  mutate_if(is.numeric, round, digits = 2)
+
+reordered_cit_master_sample_data <- cit_master_sample_data[, c(1, 12, 2:11, 13:20)]
+colnames(reordered_cit_master_sample_data)[1] <- "Subject_ID"
+```
+
+
+```{r}
+# writes the dataframe to an excel document
+write_xlsx(
+  reordered_cit_master_sample_data,
+  path = "B:\\CITRC\\CITRC_Sample_Data_Master_20230602.xlsx",
+  col_names = TRUE)
+```

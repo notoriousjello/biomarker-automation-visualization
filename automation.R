@@ -26,12 +26,18 @@ long_data <- raw_data[,c("Plate Name",
                          "Detection Range",
                          "Detection Limits: Calc. High",
                          "Detection Limits: Calc. Low")]
-
-# separates the sample column into study visit and sample number
-long_data <- long_data %>% 
+  
+# separates the sample column into visit and sample number
+long_sample <- long_data %>% 
+  filter(`Sample Group` %in% c("PE", "URN")) %>%
   separate(col = Sample,
            into = c("Study","Sample", "Visit"),
            sep = "_")
+
+long_non_sample <- long_data %>%
+  filter(`Sample Group` %in% c("Standards", "QC", "Blank"))
+  
+long_data <- bind_rows(long_sample, long_non_sample)
 #-------------------------------------------------------WIDE DATA-----------------------------------------------------
 # selects the "Sample" and "Calc. Conc. Mean columns of the wide_data dataframe
 wide_data <- raw_data[,c("Sample",
@@ -69,6 +75,12 @@ wide_sample <- wide_sample %>%
 # orders the column by sample
 wide_sample <- wide_sample[order(
   wide_sample$Sample),]
+
+# concatenates study and sample columns
+wide_sample <- wide_sample %>%
+  unite("Sample",
+        Study:Sample,
+        sep = "_")
 
 # pivots the long format of the original data into a wide format
 wide_sample <- wide_sample %>%
@@ -232,7 +244,6 @@ colnames(intraplate_cvs_std) <- paste(colnames(intraplate_cvs_std),
                                       sep = "_")
 colnames(intraplate_cvs_std)[1] = "Standard"
 
-
 #------------------------------------------------------INTRA QC------------------------------------------------------
 intraplate_cvs_qc <- intraplate_cvs %>%
   filter(grepl("QC", intraplate_cvs$`Sample Group`)) %>%
@@ -249,8 +260,6 @@ colnames(intraplate_cvs_qc) <- paste(colnames(intraplate_cvs_qc),
                                      sep = "_")
 colnames(intraplate_cvs_qc)[1] = "QC"
 
-
-
 intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample, 
                                   intraplate_cvs_std, 
                                   intraplate_cvs_qc)
@@ -266,6 +275,3 @@ output <-  list(RawData = raw_data,
                 IntraplateCVs = intracvs_group,
                 README = README) 
 }
-
-
-
