@@ -9,66 +9,30 @@ output: html_document
 # Allows us to read in excel files 
 library("readxl")
 library("writexl")
+
 # tidyverse used for data manipulation
 library("tidyverse")
 ```
 
 ```{r}
-# CITRC STUDY
-# imports the citrc MSD data
-cit_Ang <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\Ang1Ang2\\CIT_PE_Ang1Ang2_20230320_ANALYZED.xlsx",
+# imports the MSD data
+ang <- read_excel("B:\\CLOVERS\\Plasma Biomarker May 2023\\Ang1Ang2\\2023_05_23\\CLV_PE_Ang1Ang2_20230710_ANALYZED.xlsx",
                   sheet = "WideSampleData")
-cit_sTREM1 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\sTREM1\\2023_04_04\\CIT_sTREM1_20230515_ANALYZED_STD_CURVE_ADJUSTED.xlsx",
+tnfr1 <- read_excel("B:\\CLOVERS\\Plasma Biomarker May 2023\\TNFR1\\2023_06_05\\CLV_TNFR1_6_2023_ANALYZED.xlsx",
                     sheet = "WideSampleData")
-cit_TNFR1 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\TNFR-1\\2022_10_RPLEX\\CIT_RPLEX_TNFR1_20221010_ANALYZED.xlsx",
-                        sheet = "WideSampleData")
-cit_ANGPTL4 <- read_excel("B:\\CITRC\\Plasma Biomarker August 2022\\AngPTL4\\2023_03_30\\AngPTL4_All_Plates_Data.xlsx",
-                          sheet = "WideSampleData")
-cit_FAS <- read_excel("C:\\Users\\notjello\\Downloads\\Fas.Data.Citrc.xls")
 ```
-
-```{r}
-# updating column names to snake script
-colnames(cit_FAS) <- c("Sample", 
-                       "Subject_Code", 
-                       "PE_sFas_V1", 
-                       "URN_sFas_V1",
-                       "PE_FasL_V1",
-                       "URN_FasL_V1", 
-                       "PE_sFas_V2", 
-                       "URN_sFas_V2", 
-                       "PE_FasL_V2", 
-                       "URN_FasL_V2") 
-cit_FAS$Sample <- paste0("CIT_", cit_FAS$Sample)
-
-cit_FAS_reorder <- cit_FAS[, c(1, 2, 3, 7, 4, 8, 5, 9, 6, 10)]
-```
-
 
 ```{r}
 # merges the two dataframes using the sample column
-cit_master_sample_data <- merge(cit_Ang, cit_sTREM1, 
-                            by = "Sample", 
-                            all.y = TRUE,
-                            all.x = TRUE)
+master_sample_data <- merge(ang, tnfr1, 
+                          by = "Sample", 
+                          all.y = TRUE,
+                          all.x = TRUE)
 
-cit_master_sample_data <- merge(cit_master_sample_data, cit_TNFR1, 
-                            by = "Sample", 
-                            all.y = TRUE,
-                            all.x = TRUE)
 
-cit_master_sample_data <- merge(cit_master_sample_data, cit_ANGPTL4, 
-                            by = "Sample", 
-                            all.y = TRUE,
-                            all.x = TRUE)
-
-cit_master_sample_data <- merge(cit_master_sample_data, cit_FAS_reorder, 
-                            by = "Sample", 
-                            all.y = TRUE,
-                            all.x = TRUE)
 
 # rounds numeric columns
-cit_master_sample_data <- cit_master_sample_data %>%
+master_sample_data <- master_sample_data %>%
   mutate_if(is.numeric, round, digits = 2)
 
 reordered_cit_master_sample_data <- cit_master_sample_data[, c(1, 12, 2:11, 13:20)]

@@ -13,8 +13,6 @@ library("tidyverse")
 library("readxl")
 # writexl allows us to write to excel files
 library("writexl")
-# tidyr lets us reshape our long data into wide data
-library("tidyr")
 # qpcR lets us merge data frames side by side
 library("qpcR")
 ```
@@ -23,26 +21,33 @@ library("qpcR")
 ```{r}
 # reads the raw data excel file and stores it as a variable
 # FOR NEW USERS:
-#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL
-raw_data <- read_excel("test\\CHR_sRAGE_20230208_RAW.xlsx")
-README <- read_excel("ReadME_Template.xlsx")
+#     CHANGE THE PATH IN THE read_excel FUNCTION TO THE RAW DATA EXCEL  
+raw_data <- read_xlsx("B:/CITRC/Plasma Biomarker August 2022/AngPTL4/2023_03_30/AngPTL4_CIT_PE_Set1_03_30_23.xlsx",
+                      sheet = "MyAssay",
+                      skip = 41)
+raw_data <- raw_data[2:11
+                     ]
+
+# conditionally adds a prefix (Study Abbreviation) to the Sample list 
+raw_data$Sample <- ifelse(grepl("_V", raw_data$Sample), 
+                          paste0("CIT_", raw_data$Sample),
+                          paste0("", raw_data$Sample))
+
+# converts US to URN for standardization
+raw_data$`Sample Group`[raw_data$`Sample Group` == "US"] <- "URN"
+```
+
+
+```{r}
+# converts several columns of the raw data file into numeric format instead of character format
 raw_data$`Calc. Conc. Mean` <- as.numeric(raw_data$`Calc. Conc. Mean`)
 raw_data$`Calc. Concentration` <- as.numeric(raw_data$`Calc. Concentration`)
 raw_data$CV <- as.numeric(raw_data$CV)
 raw_data$`Calc. Conc. CV` <- as.numeric(raw_data$`Calc. Conc. CV`)
 
-# makes a list of all of the plates in the plate name column
-# biomarker_plates <- as.list(unique(
-#   raw_data$`Plate Name`))
-# print(biomarker_plates)
-
-# # reads a specific plate from the raw data file
-# raw_data <- raw_data %>%
-#   filter(`Plate Name` == "Plate_23M2JAL784_Set1") 
-
+# converts NaN values into -89 or -99 to mark for imputation at a later date
 raw_data$`Calc. Conc. Mean`[raw_data$`Detection Range` == "Below Fit Curve Range"] <- -89
 raw_data$`Calc. Conc. Mean`[raw_data$`Detection Range` == "Above Fit Curve Range"] <- -99
-
 raw_data$`Calc. Concentration`[raw_data$`Detection Range` == "Below Fit Curve Range"] <- -89
 raw_data$`Calc. Concentration`[raw_data$`Detection Range` == "Above Fit Curve Range"] <- -99
 ```
@@ -75,30 +80,6 @@ long_non_sample <- long_data %>%
   filter(`Sample Group` %in% c("Standards", "QC", "Blank"))
 
 long_data <- bind_rows(long_sample, long_non_sample)
-
-# long_data <- function(raw_data) {
-#   # stores a subset of columns from raw_data as long_data
-#   long_data <- raw_data[,c("Plate Name",
-#                            "Sample",
-#                            "Sample Group",
-#                            "Assay",
-#                            "Dilution",
-#                            "Concentration",
-#                            "% Recovery Mean",
-#                            "Calc. Concentration",
-#                            "Calc. Conc. Mean",
-#                            "Calc. Conc. CV",
-#                            "Detection Range",
-#                            "Detection Limits: Calc. High",
-#                            "Detection Limits: Calc. Low")]
-#   
-#   # separates the sample column into visit and sample number
-#   long_data <- long_data %>% 
-#     separate(col = Sample,
-#              into = c("Study","Sample", "Visit"),
-#              sep = "_")
-#   return(long_data)
-# }
 ```
 
 -------------------------------------------------------WIDE DATA-----------------------------------------------------
@@ -111,7 +92,7 @@ wide_data <- raw_data[,c("Sample",
 
 # removes the blank sample and creates a dataframe with just Samples
 wide_data_sample <- wide_data %>%
-  filter(`Sample Group` != "Blanks") %>%
+  filter(`Sample Group` != "Blanks")%>%
   separate(col = Sample,
            into = c("Study","Sample", "Visit"),
            sep = "_") %>%
@@ -130,12 +111,12 @@ wide_sample <- wide_data_sample %>%
            into = c("Study","Sample", "Visit", "Assay"),
            sep = "_")
 
-# makes the sample column a numeric data type
-wide_sample$Sample <- as.numeric(as.character(wide_sample$Sample))
-
-# drops all rows in sample that are NA
-wide_sample <- wide_sample %>%
-  drop_na(Sample)
+# # makes the sample column a numeric data type
+# wide_sample$Sample <- as.numeric(as.character(wide_sample$Sample))
+# 
+# # drops all rows in sample that are NA
+# wide_sample <- wide_sample %>%
+#   drop_na(Sample)
 
 # orders the column by sample
 wide_sample <- wide_sample[order(
@@ -156,7 +137,8 @@ wide_sample <- wide_sample %>%
 #------------------------------------------------------WIDE STANDARDS------------------------------------------------
 # filters the wide_data to just the standard samples
 wide_std <- wide_data %>%
-  filter(`Sample Group` == "Standards")
+  filter(`Sample Group` %in% c("STD", "Standards")) 
+#wide_std <- wide_std[, c(1,3:4)]
 
 # removes the replicate measurements of the standard 
 wide_std <- wide_std %>%
@@ -192,15 +174,12 @@ wide_qc$`Calc. Conc. Mean` <- as.numeric(as.character(wide_qc$`Calc. Conc. Mean`
 
 # takes the mean of the qc samples by assay and then pivots the table into wide format
 wide_qc <- wide_qc %>%
-  unite("Sample",
-        Sample:Assay,
-        sep = "_") %>%
-  group_by(Sample) %>%
-  summarise("Calc. Conc. Mean" = mean(`Calc. Conc. Mean`),
-            .groups = "drop") %>%
-  separate(col = Sample,
-           into = c("Sample", "Assay"),
-           sep = "_") %>%
+  group_by(Assay) %>%
+  drop_na() %>%
+  mutate(`Calc. Conc. Mean` = mean(`Calc. Conc. Mean`))
+  
+wide_qc <- wide_qc  %>%
+  mutate("Sample" = "QC") %>%
   pivot_wider(names_from = Assay,
               values_from = `Calc. Conc. Mean`)
 
@@ -233,9 +212,8 @@ llod_sample <- llod %>%
            sep = "_")
 
 # REWRITE THIS TO BE SIMPLER
-llod_sample$Sample <- as.numeric(as.character(llod_sample$Sample))
 llod_sample <- llod_sample %>%
-  drop_na(Sample) %>%
+  drop_na(Visit) %>%
   filter(`Detection Range` != "In Detection Range")
 
 # orders the data by sample
@@ -354,16 +332,17 @@ intracvs_group <- qpcR:::cbind.na(intraplate_cvs_sample,
 
 -------------------------------------------------------README------------------------------------------------------
 ```{r}
-README <- read_excel("ReadME_Template.xlsx")
-
+# creates a list of dataframes
 output <-  list(RawData = raw_data, 
                 LongData = long_data,
                 WideData = wide_data_group,
                 WideSampleData = wide_sample,
                 LLODs = llod_group,
-                IntraplateCVs = intracvs_group,
-                README = README)
+                IntraplateCVs = intracvs_group)
 
+# writes the above list of dataframes into an excel file
 write_xlsx(output, 
-           path = "test.xlsx")
+           path = 
+             "B:/CITRC/Urine Biomarker Nov 2022/TNFRI/CIT_TNFRI_UPLEX_Sep2023/CIT_TNFRI_Sep2023_PROCESSED.xlsx"
+           )
 ```
